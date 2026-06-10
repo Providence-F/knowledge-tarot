@@ -1,0 +1,14 @@
+{
+  "name": "knowledge-tarot",
+  "version": "0.1.0",
+  "description": "把个人知识库当作塔罗牌，通过抽取其中的内容来为自己做解读",
+  "scripts": {
+    "build": "node scripts/build-deck.js",
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2"
+  }
+}

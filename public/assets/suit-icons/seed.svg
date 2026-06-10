@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Seed body -->
+  <ellipse cx="32" cy="44" rx="10" ry="14"/>
+  <!-- Seed inner line -->
+  <path d="M32 30 L32 44"/>
+  <!-- Sprout stem -->
+  <path d="M32 30 C32 24 32 20 34 16"/>
+  <!-- Left leaf -->
+  <path d="M34 20 C28 18 24 14 22 10 C26 10 30 14 34 18"/>
+  <!-- Right leaf -->
+  <path d="M34 16 C40 14 44 10 46 6 C42 6 38 10 34 14"/>
+</svg>
