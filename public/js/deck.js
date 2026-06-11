@@ -1,165 +1,140 @@
-// deck.js — Deck logic module (ES module)
-
 const STOPWORDS = new Set([
-  '的', '了', '是', '在', '和', '有', '不', '这', '我', '你', '他', '她', '它', '们',
-  '那', '就', '也', '都', '把', '被', '让', '给', '从', '到', '与', '或', '但', '而',
-  '如果', '因为', '所以', '可以', '已经', '一个', '什么',
+  '的', '是', '在', '了', '和', '与', '或', '但', '而', '把', '被', '让', '给',
+  '从', '到', '对于', '关于', '通过', '经过', '因为', '所以', '如果', '虽然',
+  '但是', '可以', '能够', '应该', '需要', '已经', '正在', '将要', '这个', '那个',
+  '什么', '怎么', '为什么', '一个', '一些', '我们', '你们', '他们', '自己',
+  '没有', '不是', '就是', '还是', '可能', '应该',
 ]);
 
-const POSITION_SUIT_MAP = {
-  '过去': ['sword-of-self', 'seed-of-growth'],
-  '现在': ['compass-of-method', 'ship-of-action'],
-  '未来': ['mirror-of-world', 'seed-of-growth'],
+const POSITION_CONFIG = {
+  past: { suits: ['sword-of-self', 'seed-of-growth'], label: '过去' },
+  present: { suits: ['compass-of-method', 'ship-of-action'], label: '现在' },
+  future: { suits: ['mirror-of-world', 'seed-of-growth'], label: '未来' },
 };
 
-/**
- * Load the full deck from the API.
- */
-export async function loadDeck() {
-  const res = await fetch('/api/cards');
-  if (!res.ok) throw new Error(`Failed to load cards: ${res.status}`);
+export async function loadDeck(url = '/data/cards.json') {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load deck: ${res.status}`);
   return res.json();
 }
 
-/**
- * Simple Chinese keyword extraction.
- */
-export function extractKeywords(text) {
-  if (!text) return [];
-  // Split by punctuation and whitespace
-  const tokens = text
-    .split(/[，。！？、；：""''（）\s\.\!\?\,\;\:\"\'\(\)]+/)
-    .filter(t => t.length > 0);
+export function drawDaily(cards) {
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-  const keywords = [];
-  for (const token of tokens) {
-    if (STOPWORDS.has(token)) continue;
-    if (token.length >= 1 && token.length <= 4) {
-      keywords.push(token);
-    }
-  }
-  return [...new Set(keywords)];
+  const recent = cards.filter(c => {
+    const ts = c.metadata?.created || c.metadata?.updated;
+    if (!ts) return false;
+    return new Date(ts).getTime() >= sevenDaysAgo;
+  });
+
+  const pool = recent.length > 0 ? recent : cards;
+  const scored = pool.map(c => ({ card: c, score: scoreCard(c, '', null) }));
+  return selectFromCandidates(scored, 1)[0] || null;
 }
 
-/**
- * Score a card for relevance to the question keywords and position.
- */
-export function scoreCard(card, keywords, position) {
-  let score = 0;
-  const keywordCount = keywords.length || 1;
+export function drawThree(cards, question) {
+  const usedIds = new Set();
+  const positions = ['past', 'present', 'future'];
+  const result = [];
 
-  // Keyword match in title / scenario / summary / tags
-  const searchText = [
-    card.title || '',
-    card.scenario || '',
-    card.summary || '',
-    ...(card.tags || []),
-  ].join(' ');
-
-  let matchCount = 0;
-  for (const kw of keywords) {
-    if (searchText.includes(kw)) matchCount++;
+  for (const pos of positions) {
+    const available = getAvailableCards(cards, usedIds);
+    const scored = available.map(c => ({ card: c, score: scoreCard(c, question, pos) }));
+    const picked = selectFromCandidates(scored, 1);
+    if (picked.length > 0) {
+      usedIds.add(picked[0].id);
+      result.push({ ...picked[0], position: pos, positionLabel: POSITION_CONFIG[pos].label });
+    }
   }
-  score += 0.5 * (matchCount / keywordCount);
 
-  // Position suit match
-  if (position && POSITION_SUIT_MAP[position]) {
-    if (POSITION_SUIT_MAP[position].includes(card.suit)) {
+  updateDrawHistory(result.map(c => c.id));
+  return result;
+}
+
+function scoreCard(card, question, position) {
+  let score = 0;
+
+  const keywords = extractKeywords(question);
+  if (keywords.length > 0) {
+    const searchText = [
+      card.title || '',
+      card.scenario || '',
+      card.summary || '',
+      ...(card.tags || []),
+      ...(card.keywords || []),
+    ].join(' ');
+    const textKeywords = extractKeywords(searchText);
+    const intersection = keywords.filter(k => textKeywords.some(t => t.includes(k) || k.includes(t)));
+    const union = new Set([...keywords, ...textKeywords]);
+    score += 0.5 * (union.size > 0 ? intersection.length / union.size : 0);
+  }
+
+  if (position && POSITION_CONFIG[position]) {
+    if (POSITION_CONFIG[position].suits.includes(card.suit)) {
       score += 0.3;
     }
   }
 
-  // Arcana bonus
   if (card.arcana === 'major') score += 0.1;
   else if (card.arcana === 'court') score += 0.05;
 
-  // Time decay from localStorage history
   const history = getDrawHistory();
   const lastDraw = history[card.id];
   if (lastDraw) {
-    const daysSince = (Date.now() - lastDraw) / (1000 * 60 * 60 * 24);
-    score += Math.min(daysSince * 0.01, 0.1);
+    const days = (Date.now() - lastDraw) / (1000 * 60 * 60 * 24);
+    score += Math.min(days * 0.01, 0.1);
   }
 
   return score;
 }
 
-/**
- * Main draw function.
- */
-export function drawCards(deck, question, spreadType) {
-  const keywords = extractKeywords(question);
-  const allCards = deck.cards || deck;
-
-  if (spreadType === 'single') {
-    // Score all cards, take top 20, randomly pick 1
-    const scored = allCards
-      .map(c => ({ card: c, score: scoreCard(c, keywords, null) }))
-      .sort((a, b) => b.score - a.score);
-
-    const pool = scored.slice(0, 20);
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    updateDrawHistory([picked.card.id]);
-    return [{ ...picked.card, position: '今日' }];
-  }
-
-  // Three-card spread
-  const positions = ['过去', '现在', '未来'];
-  const drawn = [];
-
-  for (const pos of positions) {
-    const candidates = allCards
-      .filter(c => !drawn.some(d => d.id === c.id))
-      .map(c => ({ card: c, score: scoreCard(c, keywords, pos) }))
-      .sort((a, b) => b.score - a.score);
-
-    // Pool exhaustion protection: relax suit filter if < 5 candidates
-    let pool = candidates.slice(0, 20);
-    if (pool.length < 5) {
-      pool = candidates; // use all remaining
-    }
-
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    if (picked) {
-      drawn.push({ ...picked.card, position: pos });
-    }
-  }
-
-  updateDrawHistory(drawn.map(c => c.id));
-  return drawn;
+function extractKeywords(text) {
+  if (!text) return [];
+  return text
+    .split(/[，。！？、；：""''（）\s.!?,:;'"()\[\]{}]+/)
+    .filter(t => t.length >= 1 && t.length <= 8 && !STOPWORDS.has(t));
 }
 
-/**
- * Get draw history from localStorage.
- */
-export function getDrawHistory() {
+function selectFromCandidates(scoredCards, count) {
+  const sorted = scoredCards.sort((a, b) => b.score - a.score);
+  const top20 = sorted.slice(0, 20);
+  const result = [];
+  const pool = [...top20];
+
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    result.push(pool[idx].card);
+    pool.splice(idx, 1);
+  }
+
+  return result;
+}
+
+function getAvailableCards(cards, usedIds = new Set(), suitFilter = null) {
+  let pool = cards.filter(c => !usedIds.has(c.id));
+  if (suitFilter) {
+    const filtered = pool.filter(c => suitFilter.includes(c.suit));
+    if (filtered.length >= 3) pool = filtered;
+  }
+  if (pool.length < 3) pool = cards.filter(c => !usedIds.has(c.id));
+  return pool;
+}
+
+function getDrawHistory() {
   try {
-    const raw = localStorage.getItem('knowledge-tarot-history');
+    const raw = localStorage.getItem('cardHistory');
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-/**
- * Save draw history to localStorage.
- */
-export function saveDrawHistory(history) {
-  try {
-    localStorage.setItem('knowledge-tarot-history', JSON.stringify(history));
-  } catch {
-    // localStorage full or unavailable
-  }
-}
-
-/**
- * Update draw history with newly drawn card IDs.
- */
 function updateDrawHistory(cardIds) {
   const history = getDrawHistory();
   const now = Date.now();
-  for (const id of cardIds) {
-    history[id] = now;
-  }
-  saveDrawHistory(history);
+  for (const id of cardIds) history[id] = now;
+  try {
+    localStorage.setItem('cardHistory', JSON.stringify(history));
+  } catch {}
 }

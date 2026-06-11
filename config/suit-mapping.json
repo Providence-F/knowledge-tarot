@@ -2,43 +2,33 @@
   "suits": [
     {
       "id": "sword-of-self",
-      "label": "自我之剑",
-      "icon": "sword",
+      "name": "自我之剑",
       "directories": ["01-身份"],
-      "theme": "身份、人格、价值观",
-      "tarotMeaning": "Clarity of self, inner truth"
+      "theme": "身份、人格、价值观"
     },
     {
       "id": "mirror-of-world",
-      "label": "世界之镜",
-      "icon": "mirror",
+      "name": "世界之镜",
       "directories": ["02-世界观"],
-      "theme": "世界观、趋势、视野",
-      "tarotMeaning": "How the world reflects back"
+      "theme": "世界观、趋势、视野"
     },
     {
       "id": "compass-of-method",
-      "label": "方法之罗盘",
-      "icon": "compass",
+      "name": "方法之罗盘",
       "directories": ["03-方法论"],
-      "theme": "方法论、技能、框架",
-      "tarotMeaning": "Direction and procedure"
+      "theme": "方法论、技能、框架"
     },
     {
       "id": "ship-of-action",
-      "label": "行动之舟",
-      "icon": "ship",
+      "name": "行动之舟",
       "directories": ["04-项目", "05-学习产出"],
-      "theme": "项目、实践、产出",
-      "tarotMeaning": "Journey and execution"
+      "theme": "项目、实践、产出"
     },
     {
       "id": "seed-of-growth",
-      "label": "成长之种",
-      "icon": "seed",
+      "name": "成长之种",
       "directories": ["06-成长", "07-日志"],
-      "theme": "成长、反思、日志",
-      "tarotMeaning": "Potential and evolution"
+      "theme": "成长、反思、日志"
     }
   ],
   "typePatterns": [
@@ -49,17 +39,10 @@
     { "regex": "^案例[-_ ]", "type": "case", "label": "案例牌" }
   ],
   "arcanaMap": {
-    "mature": "major",
-    "成熟": "major",
-    "published": "major",
-    "evergreen": "major",
-    "growing": "court",
-    "成长中": "court",
-    "draft": "court",
-    "seed": "pip",
-    "种子": "pip",
-    "new": "pip"
+    "mature": "major", "成熟": "major", "published": "major", "evergreen": "major",
+    "growing": "court", "成长中": "court", "draft": "court",
+    "seed": "pip", "种子": "pip", "new": "pip"
   },
-  "skipDirectories": ["10-归档", ".claude", ".cleanup-backup", ".obsidian", "11-系统"],
-  "vaultPath": "E:/obsidian/AI革命生存指南"
+  "skipDirectories": ["10-归档", ".claude", ".cleanup-backup", ".obsidian", ".trash", ".vscode", ".search", ".smart-env"],
+  "knowledgeBasePath": "E:\\obsidian\\AI革命生存指南"
 }

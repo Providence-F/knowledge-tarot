@@ -1,44 +1,18 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-// ── Load config ──────────────────────────────────────────────────────
-const configPath = path.resolve(__dirname, '..', 'config', 'suit-mapping.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+const ROOT = path.resolve(__dirname, '..');
+const CONFIG_PATH = path.join(ROOT, 'config', 'suit-mapping.json');
+const DATA_DIR = path.join(ROOT, 'data');
+const OUTPUT_PATH = path.join(DATA_DIR, 'cards.json');
+const REPORT_PATH = path.join(DATA_DIR, 'build-report.txt');
 
-const VAULT_PATH = config.vaultPath;
-const SUITS = config.suits;
-const TYPE_PATTERNS = config.typePatterns.map(p => ({
-  ...p,
-  regex: new RegExp(p.regex)
-}));
-const ARCANA_MAP = config.arcanaMap;
-const SKIP_DIRS = new Set(config.skipDirectories);
+function loadConfig() {
+  return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+}
 
-// Suit code lookup: suit id → 2-letter prefix
-const SUIT_CODES = {
-  'sword-of-self': 'SW',
-  'mirror-of-world': 'MI',
-  'compass-of-method': 'CO',
-  'ship-of-action': 'SH',
-  'seed-of-growth': 'SE'
-};
-
-// Type → uppercase label
-const TYPE_UPPER = {
-  'insight': 'INSIGHT',
-  'method': 'METHOD',
-  'concept': 'CONCEPT',
-  'framework': 'FRAMEWORK',
-  'case': 'CASE'
-};
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-/**
- * Recursively walk a directory, yielding .md file paths.
- * Skips directories in SKIP_DIRS.
- */
-function walkDir(dir) {
+function walkMarkdownFiles(dir, skipDirs, baseDir) {
   const results = [];
   let entries;
   try {
@@ -47,515 +21,385 @@ function walkDir(dir) {
     return results;
   }
   for (const entry of entries) {
-    if (SKIP_DIRS.has(entry.name)) continue;
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      results.push(...walkDir(fullPath));
+      if (skipDirs.includes(entry.name)) continue;
+      results.push(...walkMarkdownFiles(fullPath, skipDirs, baseDir));
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      results.push(fullPath);
+      const relativePath = path.relative(baseDir, fullPath).replace(/\\/g, '/');
+      results.push({ fullPath, relativePath, fileName: entry.name });
     }
   }
   return results;
 }
 
-/**
- * Parse YAML frontmatter between first pair of --- lines.
- * Returns { frontmatter: object, bodyStartIndex: number } or null.
- */
-function parseFrontmatter(raw) {
-  const trimmed = raw.trimStart();
-  if (!trimmed.startsWith('---')) return null;
-  const secondDash = trimmed.indexOf('\n---', 3);
-  if (secondDash === -1) return null;
-
-  const yamlBlock = trimmed.substring(3, secondDash).trim();
-  const bodyStart = secondDash + 4; // skip past \n---
-
-  const meta = {};
-  let currentKey = null;
-  let inArray = false;
-  let arrayItems = [];
-
-  for (const line of yamlBlock.split('\n')) {
-    // Array continuation
-    if (inArray && /^\s+-\s/.test(line)) {
-      const val = line.replace(/^\s*-\s*/, '').trim().replace(/^["']|["']$/g, '');
-      arrayItems.push(val);
-      continue;
-    }
-    if (inArray) {
-      meta[currentKey] = arrayItems;
-      inArray = false;
-      arrayItems = [];
-    }
-
-    const match = line.match(/^(\w[\w-]*):\s*(.*)/);
-    if (match) {
-      currentKey = match[1];
-      let value = match[2].trim();
-      // Inline array: [a, b, c]
-      if (value.startsWith('[') && value.endsWith(']')) {
-        meta[currentKey] = value
-          .slice(1, -1)
-          .split(',')
-          .map(s => s.trim().replace(/^["']|["']$/g, ''))
-          .filter(Boolean);
-      } else if (value === '' || value === '[]') {
-        // Could be start of block array or empty
-        inArray = false;
-        meta[currentKey] = value === '[]' ? [] : '';
-      } else {
-        meta[currentKey] = value.replace(/^["']|["']$/g, '');
-      }
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return { frontmatter: {}, body: content };
+  const raw = match[1];
+  const fm = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.match(/^(\w+)\s*:\s*(.+)/);
+    if (m) {
+      let val = m[2].trim().replace(/^["']|["']$/g, '');
+      if (val === 'true') val = true;
+      else if (val === 'false') val = false;
+      fm[m[1]] = val;
     }
   }
-  // Flush trailing array
-  if (inArray && currentKey) {
-    meta[currentKey] = arrayItems;
-  }
-
-  return { meta, bodyStart };
+  const body = content.slice(match[0].length).trim();
+  return { frontmatter: fm, body };
 }
 
-/**
- * Clean text: strip frontmatter, comments, wikilinks, markdown formatting.
- */
-function cleanText(text) {
+function cleanContent(text) {
   let s = text;
-  // Strip frontmatter
-  s = s.replace(/^---[\s\S]*?---\s*/, '');
-  // Strip Obsidian comments %%...%%
   s = s.replace(/%%[\s\S]*?%%/g, '');
-  // Strip block-ids ^xxx
   s = s.replace(/\^[a-zA-Z0-9_-]+/g, '');
-  // Convert wikilinks [[A|B]] → B, [[A]] → A
   s = s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2');
   s = s.replace(/\[\[([^\]]+)\]\]/g, '$1');
-  // Convert markdown links [text](url) → text
-  s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
-  // Strip bold
-  s = s.replace(/\*\*(.+?)\*\*/g, '$1');
-  // Strip italic
-  s = s.replace(/\*(.+?)\*/g, '$1');
-  // Strip inline code
-  s = s.replace(/`([^`]+)`/g, '$1');
-  // Collapse whitespace
-  s = s.replace(/[ \t]+/g, ' ');
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  s = s.replace(/^>\s?/gm, '');
+  s = s.replace(/\r\n/g, '\n');
+  s = s.replace(/\n{3,}/g, '\n\n');
   return s.trim();
 }
 
-/**
- * Extract all wikilinks from raw text: [[target]] and [[target|display]].
- * Returns array of target names.
- */
-function extractWikilinks(text) {
-  const links = [];
-  const re = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    const target = m[1].trim();
-    if (target && !links.includes(target)) {
-      links.push(target);
-    }
-  }
-  return links;
-}
-
-/**
- * Find blockquote lines in text (lines starting with >).
- * Returns array of cleaned blockquote content.
- */
-function extractBlockquotes(text) {
-  const lines = text.split('\n');
+function extractBlockquotes(body) {
+  const lines = body.split('\n');
   const quotes = [];
+  let current = [];
   for (const line of lines) {
-    const m = line.match(/^>\s*(.*)/);
-    if (m) {
-      quotes.push(m[1].trim());
+    if (line.match(/^\s*>\s?/)) {
+      current.push(line.replace(/^\s*>\s?/, ''));
+    } else {
+      if (current.length > 0) {
+        quotes.push(current.join('\n').trim());
+        current = [];
+      }
     }
   }
+  if (current.length > 0) quotes.push(current.join('\n').trim());
   return quotes;
 }
 
-/**
- * Extract content under a heading (## or ###) matching the given title.
- * Returns text until the next heading of equal or lesser depth, max maxChars.
- */
-function extractSection(text, headingTitle, maxChars) {
-  // Match ## 核心洞察 or ### 核心洞察
-  const re = new RegExp(`^#{2,3}\\s+${headingTitle}\\s*$`, 'm');
-  const match = re.exec(text);
-  if (!match) return '';
+function extractCoreClaimSentence(body) {
+  // 1. > **核心主张**：xxx
+  const m1 = body.match(/>\s*\*\*核心主张\*\*\s*[：:]\s*(.+)/);
+  if (m1) return m1[1].trim().replace(/\*\*/g, '').slice(0, 120);
+  // 2. 模糊匹配
+  const m2 = body.match(/> .*核心主张.*[：:]\s*(.+)/);
+  if (m2) return m2[1].trim().replace(/\*\*/g, '').slice(0, 120);
+  return '';
+}
 
-  const afterHeading = text.substring(match.index + match[0].length);
-  const lines = afterHeading.split('\n');
-  const content = [];
+function extractTitle(body, frontmatter, fileName) {
+  // 1. 核心主张句（精简为牌名）
+  const claim = extractCoreClaimSentence(body);
+  if (claim) {
+    // 取核心主张的最后一句（通常是最精炼的结论）
+    const sentences = claim.split(/[。，；]/).filter(s => s.trim().length > 2);
+    if (sentences.length > 0) {
+      const last = sentences[sentences.length - 1].trim();
+      if (last.length >= 4 && last.length <= 50) return last;
+      // 如果最后一句太长，取前 50 字
+      return claim.slice(0, 50);
+    }
+    return claim.slice(0, 50);
+  }
+  // 2. 第一个 H2/H3 小标题
+  const headingMatch = body.match(/^#{2,3}\s+(.+)/m);
+  if (headingMatch) {
+    let h = headingMatch[1].replace(/[*_`]/g, '').trim();
+    // 去掉序号前缀如 "1. " "### 1. "
+    h = h.replace(/^\d+[.、]\s*/, '');
+    if (h.length >= 4 && h.length <= 40) return h;
+  }
+  // 3. frontmatter.title
+  if (frontmatter.title && frontmatter.title !== '[]' && frontmatter.title.length > 1) {
+    return frontmatter.title.slice(0, 40);
+  }
+  // 4. 文件名
+  return path.basename(fileName, '.md').replace(/^洞察[-_ ]?|^方法[-_ ]?|^概念[-_ ]?|^框架[-_ ]?|^案例[-_ ]?/, '').slice(0, 40);
+}
 
+function extractSummary(body, frontmatter) {
+  // 1. 核心主张
+  const claim = extractCoreClaimSentence(body);
+  if (claim) return claim.slice(0, 300);
+  // 2. 第一个非元描述的 blockquote
+  const blockquotes = extractBlockquotes(body);
+  for (const bq of blockquotes) {
+    const clean = bq.replace(/\*\*/g, '').trim();
+    // 跳过元描述（包含"提炼"、"总结"、"来源"等）
+    if (/^(提炼|总结|来源|从.*中|以下是|这是)/.test(clean)) continue;
+    if (clean.length > 10 && clean.length < 300) return clean;
+  }
+  // 3. 正文第一个完整句子
+  const text = cleanContent(body);
+  const sentences = text.split(/[。\n]/).filter(s => s.trim().length > 10 && !/^#{1,3}/.test(s.trim()));
+  if (sentences.length > 0) return sentences[0].trim().slice(0, 300);
+  return (frontmatter.title || '').slice(0, 80);
+}
+
+function extractScenario(body) {
+  // 1. > **适用场景**：xxx
+  const m1 = body.match(/>\s*\*\*适用场景\*\*\s*[：:]\s*(.+)/);
+  if (m1) return m1[1].trim().replace(/\*\*/g, '').slice(0, 300);
+  // 2. 模糊匹配
+  const m2 = body.match(/适用场景[：:]\s*(.+)/);
+  if (m2) return m2[1].trim().replace(/\*\*/g, '').slice(0, 300);
+  return '';
+}
+
+function extractKeyPoints(body) {
+  const points = [];
+  // 提取 bullet points（- 或 * 开头的行）
+  const lines = body.split('\n');
   for (const line of lines) {
-    // Stop at next heading of same or higher level
-    if (/^#{1,3}\s+/.test(line) && !line.startsWith('####')) break;
-    content.push(line);
-  }
-
-  const result = cleanText(content.join('\n'));
-  return result.length > maxChars ? result.substring(0, maxChars) : result;
-}
-
-/**
- * Extract the core claim (核心主张) with multi-level fallback.
- */
-function extractCoreClaim(rawBody, bodyAfterFrontmatter) {
-  const quotes = extractBlockquotes(rawBody);
-
-  // 1. Exact match: > **核心主张**：xxx or > **核心主张**: xxx
-  for (const q of quotes) {
-    const m = q.match(/^\*\*核心主张\*\*[：:]\s*(.+)/);
-    if (m) return cleanText(m[1]);
-  }
-
-  // 2. Fuzzy match: blockquote containing 核心主张
-  for (const q of quotes) {
-    if (q.includes('核心主张')) {
-      const cleaned = cleanText(q).replace(/核心主张[：:]?\s*/g, '');
-      if (cleaned.length > 5) return cleaned;
+    const m = line.match(/^\s*[-*]\s+(.+)/);
+    if (m) {
+      let point = m[1].replace(/\*\*/g, '').replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1').trim();
+      // 跳过元描述和太短的点
+      if (point.length < 5 || point.length > 80) continue;
+      if (/^(核心主张|适用场景|来源|相关概念|标签|微信|精读|reader|分析|画像|验证|数据)/.test(point)) continue;
+      points.push(point);
+      if (points.length >= 5) break;
     }
   }
-
-  // 3. Fallback: first blockquote line in the file body
-  const bodyQuotes = extractBlockquotes(bodyAfterFrontmatter);
-  if (bodyQuotes.length > 0) {
-    const first = cleanText(bodyQuotes[0]);
-    if (first.length > 0) return first.length > 120 ? first.substring(0, 120) : first;
-  }
-
-  // 4. Final fallback: return empty string (caller will use title)
-  return '';
-}
-
-/**
- * Extract scenario (适用场景).
- */
-function extractScenario(rawBody) {
-  const quotes = extractBlockquotes(rawBody);
-  for (const q of quotes) {
-    const m = q.match(/^\*\*适用场景\*\*[：:]\s*(.+)/);
-    if (m) return cleanText(m[1]);
-  }
-  return '';
-}
-
-/**
- * Extract hook: first blockquote line in body (after frontmatter).
- */
-function extractHook(bodyAfterFrontmatter) {
-  const quotes = extractBlockquotes(bodyAfterFrontmatter);
-  if (quotes.length > 0) {
-    return cleanText(quotes[0]);
-  }
-  return '';
-}
-
-/**
- * Extract passage: content under ## 核心洞察 or ### 核心洞察.
- */
-function extractPassage(bodyAfterFrontmatter) {
-  // Try both heading levels
-  let content = extractSection(bodyAfterFrontmatter, '核心洞察', 800);
-  if (content.length > 50) return content;
-
-  // Fallback: first 500 chars of cleaned body
-  const cleaned = cleanText(bodyAfterFrontmatter);
-  return cleaned.length > 500 ? cleaned.substring(0, 500) : cleaned;
-}
-
-/**
- * Extract keywords from title, tags, scenario.
- */
-function extractKeywords(title, tags, scenario) {
-  const sources = [title || '', scenario || '', ...tags];
-  const text = sources.join(' ');
-  // Split on non-CJK-word and non-alphanumeric boundaries
-  const tokens = text
-    .replace(/[，。、；：！？（）【】「」《》\[\](){}.,;:!?/\\|@#$%^&*+=~`'"<>\-]/g, ' ')
-    .split(/\s+/)
-    .filter(t => t.length >= 2);
-  // Deduplicate, keep order
-  const seen = new Set();
-  const result = [];
-  for (const t of tokens) {
-    const lower = t.toLowerCase();
-    if (!seen.has(lower) && t.length >= 2) {
-      seen.add(lower);
-      result.push(t);
+  // 如果没有 bullet points，从 ## 核心洞察 下提取
+  if (points.length === 0) {
+    const sectionMatch = body.match(/#{2,3}\s*核心洞察\s*\n([\s\S]*?)(?=\n#{2,3}\s|\n---|\Z)/);
+    if (sectionMatch) {
+      const sectionLines = sectionMatch[1].split('\n');
+      for (const line of sectionLines) {
+        const m = line.match(/^\s*[-*]\s+(.+)/);
+        if (m) {
+          let point = m[1].replace(/\*\*/g, '').trim();
+          if (point.length >= 5 && point.length <= 80) {
+            points.push(point);
+            if (points.length >= 5) break;
+          }
+        }
+      }
     }
   }
-  return result.slice(0, 12);
+  return points;
 }
 
-/**
- * Map suit directory to suit object.
- * Returns the matching suit or null.
- */
-function findSuit(relativePath) {
-  // Normalize to forward slashes for consistent splitting
+function extractPassage(body) {
+  // 结构化提取：优先取"核心洞察"章节
+  const sectionMatch = body.match(/#{2,3}\s*核心洞察\s*\n([\s\S]*?)(?=\n#{2,3}\s|\n---|\Z)/);
+  if (sectionMatch) {
+    const section = sectionMatch[1];
+    const parts = [];
+    // 按 ### 子章节分割
+    const subsections = section.split(/(?=^###\s)/m);
+    for (const sub of subsections) {
+      const headingMatch = sub.match(/^###\s+(.+)/m);
+      if (headingMatch) {
+        const heading = headingMatch[1].replace(/\d+[.、]\s*/, '').replace(/\*\*/g, '').trim();
+        const content = sub.replace(/^###\s+.+\n?/, '').trim();
+        const cleanContent = content.replace(/\*\*/g, '').replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1').trim();
+        if (heading.length > 1 && cleanContent.length > 5) {
+          parts.push(`【${heading}】${cleanContent.slice(0, 200)}`);
+        }
+      }
+    }
+    if (parts.length > 0) return parts.join('\n\n').slice(0, 800);
+  }
+  // 回退：取第一个非标题的完整段落
+  const cleaned = cleanContent(body);
+  const paragraphs = cleaned.split(/\n\n+/).filter(p => {
+    const t = p.trim();
+    return t.length > 20 && !/^#{1,3}/.test(t) && !/^(提炼|总结|来源|从.*中)/.test(t);
+  });
+  if (paragraphs.length > 0) return paragraphs[0].slice(0, 500);
+  return '';
+}
+
+function extractWikilinks(raw) {
+  const links = [];
+  const re = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    links.push(m[1].trim());
+  }
+  return [...new Set(links)];
+}
+
+function extractKeywords(body, frontmatter) {
+  const keywords = new Set();
+  if (frontmatter.tags) {
+    const tags = typeof frontmatter.tags === 'string'
+      ? frontmatter.tags.split(/[,，\s]+/)
+      : (Array.isArray(frontmatter.tags) ? frontmatter.tags : []);
+    tags.forEach(t => { if (t) keywords.add(t.replace(/^#/, '')); });
+  }
+  const headingRe = /^#{1,3}\s+(.+)/gm;
+  let m;
+  while ((m = headingRe.exec(body)) !== null) {
+    const h = m[1].replace(/[*_`]/g, '').trim();
+    if (h.length > 1 && h.length < 30) keywords.add(h);
+  }
+  return [...keywords].slice(0, 10);
+}
+
+function makeId(suit, type, fileName) {
+  const hash = crypto.createHash('md5').update(fileName).digest('hex').slice(0, 8);
+  const suitSlug = suit || 'unknown';
+  const typeSlug = type || 'general';
+  return `${suitSlug}-${typeSlug}-${hash}`;
+}
+
+function matchType(fileName, typePatterns) {
+  for (const tp of typePatterns) {
+    if (new RegExp(tp.regex).test(fileName)) return tp.type;
+  }
+  return 'general';
+}
+
+function matchSuit(relativePath, suits) {
   const normalized = relativePath.replace(/\\/g, '/');
-  const firstSegment = normalized.split('/')[0];
-  for (const suit of SUITS) {
-    if (suit.directories.includes(firstSegment)) {
-      return suit;
+  for (const suit of suits) {
+    for (const dir of suit.directories) {
+      if (normalized.startsWith(dir + '/') || normalized === dir) return suit.id;
     }
   }
   return null;
 }
 
-/**
- * Detect card type from filename.
- */
-function detectType(filename) {
-  for (const p of TYPE_PATTERNS) {
-    if (p.regex.test(filename)) {
-      return { type: p.type, label: p.label };
-    }
-  }
-  return { type: 'other', label: '其他' };
-}
-
-/**
- * Map status to arcana.
- */
-function toArcana(status) {
+function matchArcana(status, arcanaMap) {
   if (!status) return 'pip';
-  const lower = status.toLowerCase();
-  return ARCANA_MAP[lower] || ARCANA_MAP[status] || 'pip';
+  const s = String(status).toLowerCase().trim();
+  return arcanaMap[s] || 'pip';
 }
 
-/**
- * Format date from various formats to YYYY-MM-DD.
- */
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  // Already YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-    return dateStr.substring(0, 10);
+function buildCards(config) {
+  const { suits, typePatterns, arcanaMap, skipDirectories, knowledgeBasePath } = config;
+  const baseDir = knowledgeBasePath;
+  if (!fs.existsSync(baseDir)) {
+    console.error(`[ERROR] Knowledge base not found: ${baseDir}`);
+    process.exit(1);
   }
-  return dateStr;
-}
 
-// ── Main ─────────────────────────────────────────────────────────────
-
-function main() {
-  console.log('=== 知识塔罗构建 ===');
-  console.log(`Vault: ${VAULT_PATH}`);
-
-  // 1. Walk vault
-  const allFiles = walkDir(VAULT_PATH);
-  console.log(`Found ${allFiles.length} markdown files`);
-
-  // 2. Sequence counters per suit+type
-  const seqCounters = {};
-
-  // 3. Stats
-  const stats = {
-    total: allFiles.length,
-    success: 0,
-    failNoFrontmatter: 0,
-    failCoreClaimFallback: 0,
-    failCoreClaimTitle: 0,
-    suitCounts: {},
-    typeCounts: {},
-    arcanaCounts: { major: 0, court: 0, pip: 0 },
-    errors: []
-  };
-
-  // Init suit counts
-  for (const suit of SUITS) {
-    stats.suitCounts[suit.id] = 0;
-  }
+  const files = walkMarkdownFiles(baseDir, skipDirectories, baseDir);
+  console.log(`[INFO] Found ${files.length} markdown files`);
 
   const cards = [];
+  const errors = [];
+  const suitDistribution = {};
 
-  for (const filePath of allFiles) {
+  for (const file of files) {
     try {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const relativePath = path.relative(VAULT_PATH, filePath).replace(/\\/g, '/');
-      const filename = path.basename(filePath, '.md');
+      const raw = fs.readFileSync(file.fullPath, 'utf8');
+      const { frontmatter, body } = parseFrontmatter(raw);
+      const cleanedBody = cleanContent(body);
 
-      // Parse frontmatter
-      const parsed = parseFrontmatter(raw);
-      let meta = {};
-      let bodyAfterFrontmatter;
+      const title = extractTitle(body, frontmatter, file.fileName);
+      const type = matchType(file.fileName, typePatterns);
+      const suit = matchSuit(file.relativePath, suits);
+      const arcana = matchArcana(frontmatter.status, arcanaMap);
 
-      if (parsed) {
-        meta = parsed.meta;
-        bodyAfterFrontmatter = raw.substring(parsed.bodyStart);
-      } else {
-        bodyAfterFrontmatter = raw;
-        stats.failNoFrontmatter++;
+      // 跳过 unknown suit 和噪声文件
+      if (!suit) {
+        suitDistribution['unknown'] = (suitDistribution['unknown'] || 0) + 1;
+        continue;
       }
 
-      // Find suit
-      const suit = findSuit(relativePath);
-      if (!suit) continue; // Skip files not in any suit
+      suitDistribution[suit] = (suitDistribution[suit] || 0) + 1;
 
-      // Detect type
-      const typeInfo = detectType(filename);
-
-      // Arcana
-      const arcana = toArcana(meta.status);
-
-      // Title
-      const title = meta.title || filename;
-
-      // Core claim
-      let coreClaim = extractCoreClaim(raw, bodyAfterFrontmatter);
-      if (!coreClaim) {
-        // Use title as final fallback
-        coreClaim = title;
-        stats.failCoreClaimTitle++;
-      }
-
-      // Scenario
-      let scenario = extractScenario(raw);
-
-      // Hook
-      let hook = extractHook(bodyAfterFrontmatter);
-      if (!hook) hook = coreClaim;
-
-      // Passage
-      let passage = extractPassage(bodyAfterFrontmatter);
-
-      // Wikilinks
-      const links = extractWikilinks(raw);
-
-      // Tags
-      const tags = Array.isArray(meta.tags) ? meta.tags : [];
-
-      // Keywords
-      const keywords = extractKeywords(title, tags, scenario);
-
-      // Dates
-      const created = formatDate(meta.created || meta.date || '');
-      const updated = formatDate(meta.updated || meta.date || '');
-
-      // Source
-      const source = meta.source || '';
-
-      // Generate card ID
-      const suitCode = SUIT_CODES[suit.id];
-      const typeUpper = TYPE_UPPER[typeInfo.type] || 'OTHER';
-      const counterKey = `${suitCode}-${typeUpper}`;
-      if (!seqCounters[counterKey]) seqCounters[counterKey] = 0;
-      seqCounters[counterKey]++;
-      const seq = String(seqCounters[counterKey]).padStart(3, '0');
-      const cardId = `${suitCode}-${typeUpper}-${seq}`;
-
-      // Build card
       const card = {
-        id: cardId,
-        suit: suit.id,
-        suitLabel: suit.label,
-        type: typeInfo.type,
-        typeLabel: typeInfo.label,
+        id: makeId(suit, type, file.relativePath),
+        title,
+        sourceTitle: frontmatter.title || path.basename(file.fileName, '.md'),
+        suit,
+        type,
         arcana,
-        title: cleanText(title),
-        hook: cleanText(hook),
-        summary: cleanText(coreClaim),
-        scenario: cleanText(scenario),
-        passage: cleanText(passage),
-        filePath: relativePath,
-        tags,
-        status: meta.status || 'seed',
-        created,
-        links,
-        keywords
+        summary: extractSummary(body, frontmatter),
+        scenario: extractScenario(body),
+        passage: extractPassage(body),
+        keyPoints: extractKeyPoints(body),
+        tags: extractKeywords(body, frontmatter),
+        wikilinks: extractWikilinks(raw),
+        filePath: file.relativePath,
+        created: frontmatter.created || '',
+        updated: frontmatter.updated || '',
       };
-
-      // If source exists, add it
-      if (source) card.source = source;
-
       cards.push(card);
-      stats.success++;
-
-      // Update counters
-      stats.suitCounts[suit.id]++;
-      if (typeInfo.type !== 'other') {
-        stats.typeCounts[typeInfo.type] = (stats.typeCounts[typeInfo.type] || 0) + 1;
-      }
-      stats.arcanaCounts[arcana] = (stats.arcanaCounts[arcana] || 0) + 1;
-
     } catch (err) {
-      stats.errors.push({ file: filePath, error: err.message });
+      errors.push({ file: file.relativePath, error: err.message });
     }
   }
 
-  // 4. Build output
-  const suitsMeta = {};
-  for (const suit of SUITS) {
-    suitsMeta[suit.id] = {
-      count: stats.suitCounts[suit.id],
-      label: suit.label,
-      icon: suit.icon,
-      theme: suit.theme
-    };
+  return { cards, errors, suitDistribution, totalFiles: files.length };
+}
+
+function generateReport(result) {
+  const { cards, errors, suitDistribution, totalFiles } = result;
+  const lines = [];
+  lines.push('=== Knowledge Tarot Build Report ===');
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push(`Total files scanned: ${totalFiles}`);
+  lines.push(`Cards generated: ${cards.length}`);
+  lines.push(`Errors: ${errors.length}`);
+  lines.push('');
+  lines.push('--- Suit Distribution ---');
+  for (const [suit, count] of Object.entries(suitDistribution).sort((a, b) => b[1] - a[1])) {
+    lines.push(`  ${suit}: ${count}`);
   }
+  lines.push('');
+  lines.push('--- Type Distribution ---');
+  const typeDist = {};
+  for (const c of cards) typeDist[c.type] = (typeDist[c.type] || 0) + 1;
+  for (const [type, count] of Object.entries(typeDist).sort((a, b) => b[1] - a[1])) {
+    lines.push(`  ${type}: ${count}`);
+  }
+  lines.push('');
+  lines.push('--- Arcana Distribution ---');
+  const arcanaDist = {};
+  for (const c of cards) arcanaDist[c.arcana] = (arcanaDist[c.arcana] || 0) + 1;
+  for (const [arcana, count] of Object.entries(arcanaDist).sort((a, b) => b[1] - a[1])) {
+    lines.push(`  ${arcana}: ${count}`);
+  }
+  if (errors.length > 0) {
+    lines.push('');
+    lines.push('--- Errors ---');
+    for (const e of errors) {
+      lines.push(`  ${e.file}: ${e.error}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function main() {
+  console.log('[INFO] Loading config...');
+  const config = loadConfig();
+
+  console.log('[INFO] Building deck...');
+  const result = buildCards(config);
+
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
   const output = {
-    meta: {
-      vaultPath: VAULT_PATH.replace(/\\/g, '/'),
-      buildDate: new Date().toISOString().substring(0, 10),
-      totalCards: cards.length,
-      suits: suitsMeta
+    version: '1.0',
+    generatedAt: new Date().toISOString(),
+    stats: {
+      total: result.totalFiles,
+      success: result.cards.length,
+      failed: result.errors.length,
+      suitDistribution: result.suitDistribution
     },
-    cards
+    cards: result.cards
   };
 
-  // 5. Write output
-  const outDir = path.resolve(__dirname, '..', 'data');
-  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-  const outPath = path.join(outDir, 'cards.json');
-  fs.writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf-8');
+  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2), 'utf8');
+  console.log(`[INFO] Wrote ${result.cards.length} cards to ${OUTPUT_PATH}`);
 
-  // 6. Print validation report
-  const failTotal = stats.failNoFrontmatter + stats.failCoreClaimFallback + stats.failCoreClaimTitle;
+  const report = generateReport(result);
+  fs.writeFileSync(REPORT_PATH, report, 'utf8');
+  console.log(`[INFO] Report written to ${REPORT_PATH}`);
   console.log('');
-  console.log('=== 知识塔罗构建报告 ===');
-  console.log(`总文件: ${stats.total}`);
-  console.log(`成功提取: ${stats.success} (${(stats.success / stats.total * 100).toFixed(1)}%)`);
-  console.log(`失败: ${failTotal}`);
-  console.log(`  - 无 frontmatter: ${stats.failNoFrontmatter}`);
-  console.log(`  - 核心主张回退到 title: ${stats.failCoreClaimTitle}`);
-
-  // Suit distribution
-  const suitLabels = SUITS.map(s => `${s.label}(${stats.suitCounts[s.id]})`).join('  ');
-  console.log(`花色分布: ${suitLabels}`);
-
-  // Type distribution
-  const typeOrder = ['insight', 'method', 'concept', 'framework', 'case'];
-  const typeLabels = typeOrder
-    .filter(t => stats.typeCounts[t])
-    .map(t => {
-      const label = TYPE_PATTERNS.find(p => p.type === t)?.label || t;
-      return `${label}(${stats.typeCounts[t] || 0})`;
-    })
-    .join('  ');
-  console.log(`牌型分布: ${typeLabels}`);
-
-  // Arcana distribution
-  console.log(`牌位分布: 大阿尔卡纳(${stats.arcanaCounts.major})  宫廷牌(${stats.arcanaCounts.court})  数字牌(${stats.arcanaCounts.pip})`);
-
-  // Errors
-  if (stats.errors.length > 0) {
-    console.log(`\n解析错误: ${stats.errors.length}`);
-    for (const e of stats.errors.slice(0, 10)) {
-      console.log(`  - ${e.file}: ${e.error}`);
-    }
-    if (stats.errors.length > 10) {
-      console.log(`  ... 还有 ${stats.errors.length - 10} 个错误`);
-    }
-  }
-
-  console.log(`\n输出: ${outPath}`);
-  console.log('构建完成。');
+  console.log(report);
 }
 
 main();

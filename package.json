@@ -1,14 +1,15 @@
 {
   "name": "knowledge-tarot",
-  "version": "0.1.0",
-  "description": "把个人知识库当作塔罗牌，通过抽取其中的内容来为自己做解读",
+  "version": "1.0.0",
+  "description": "Knowledge Tarot - AI-powered knowledge reflection tool",
+  "main": "server/index.js",
   "scripts": {
-    "build": "node scripts/build-deck.js",
     "start": "node server/index.js",
-    "dev": "node server/index.js"
+    "build": "echo 'No build step needed'",
+    "dev": "node --watch server/index.js"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
   }
 }

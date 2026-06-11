@@ -1,0 +1,26 @@
+=== Knowledge Tarot Build Report ===
+Generated: 2026-06-11T03:46:59.826Z
+Total files scanned: 706
+Cards generated: 651
+Errors: 0
+
+--- Suit Distribution ---
+  compass-of-method: 237
+  ship-of-action: 196
+  mirror-of-world: 111
+  sword-of-self: 65
+  unknown: 55
+  seed-of-growth: 42
+
+--- Type Distribution ---
+  insight: 273
+  general: 250
+  method: 50
+  concept: 37
+  framework: 26
+  case: 15
+
+--- Arcana Distribution ---
+  pip: 346
+  court: 211
+  major: 94

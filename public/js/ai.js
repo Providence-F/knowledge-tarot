@@ -1,55 +1,65 @@
-// ai.js — AI module (ES module)
-
-/**
- * Check if user has enabled cloud mode (read from DOM toggle).
- */
-export function isCloudMode() {
-  const toggle = document.getElementById('privacy-switch');
-  return toggle ? toggle.getAttribute('aria-checked') === 'true' : false;
+export function getPrivacyMode() {
+  try {
+    return localStorage.getItem('privacyMode') || 'local';
+  } catch {
+    return 'local';
+  }
 }
 
-/**
- * Request AI interpretation from the backend.
- * Sends only: question, cards (id, title, summary, scenario, position).
- * Does NOT send full passage or file path (privacy).
- */
-export async function requestInterpretation(question, cards) {
-  // Strip to minimal data for privacy
-  const sanitizedCards = cards.map(c => ({
-    id: c.id,
-    title: c.title,
-    summary: c.summary || c.hook || '',
-    scenario: c.scenario || '',
-    position: c.position,
-  }));
-
-  const res = await fetch('/api/interpret', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      question,
-      cards: sanitizedCards,
-      privacyMode: 'cloud',
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Interpretation request failed: ${res.status}`);
-  }
-
-  // Check if response is SSE stream
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream')) {
-    return await handleSSEStream(res);
-  }
-
-  // Regular JSON response (fallback case)
-  return await res.json();
+export function setPrivacyMode(mode) {
+  try {
+    localStorage.setItem('privacyMode', mode);
+  } catch {}
 }
 
-/**
- * Handle SSE stream from the server.
- */
+export async function getInterpretation(question, cards, privacyMode) {
+  if (privacyMode === 'local') {
+    return { interpretation: getFallbackInterpretation(question, cards), source: 'local' };
+  }
+
+  try {
+    const sanitized = cards.map(c => ({
+      id: c.id,
+      title: c.title,
+      summary: c.summary || '',
+      scenario: c.scenario || '',
+      position: c.position,
+      positionLabel: c.positionLabel || '',
+      keyPoints: c.keyPoints || [],
+    }));
+
+    const res = await fetch('/api/interpret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, cards: sanitized }),
+    });
+
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/event-stream')) {
+      return await handleSSEStream(res);
+    }
+
+    const data = await res.json();
+    return { interpretation: data.interpretation, source: data.source || 'ai' };
+  } catch {
+    return { interpretation: getFallbackInterpretation(question, cards), source: 'local' };
+  }
+}
+
+export function getFallbackInterpretation(question, cards) {
+  const cardReadings = cards.map(c => {
+    const label = c.positionLabel || c.position || '';
+    const points = (c.keyPoints && c.keyPoints.length > 0)
+      ? c.keyPoints.slice(0, 3).map(kp => `  · ${kp}`).join('\n')
+      : '';
+    return `【${label}】${c.title}\n${c.summary || ''}\n${c.scenario ? '适用：' + c.scenario : ''}\n${points}`;
+  }).join('\n\n');
+
+  return `你问的是：「${question}」\n\n${cardReadings}`;
+}
+
 async function handleSSEStream(response) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -73,37 +83,11 @@ async function handleSSEStream(response) {
         const parsed = JSON.parse(data);
         if (parsed.type === 'text' && parsed.text) {
           fullText += parsed.text;
-          // Dispatch progress event for live rendering
           window.dispatchEvent(new CustomEvent('ai-stream', { detail: { text: fullText, chunk: parsed.text } }));
         }
-      } catch {
-        // skip
-      }
+      } catch {}
     }
   }
 
   return { interpretation: fullText, source: 'ai' };
-}
-
-/**
- * Parse Claude's XML-formatted response.
- */
-export function parseInterpretation(rawText) {
-  if (!rawText) return { reflection: '', connection: '', question: '' };
-
-  const extract = (tag) => {
-    const match = rawText.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
-    return match ? match[1].trim() : '';
-  };
-
-  const reflection = extract('reflection');
-  const connection = extract('connection');
-  const question = extract('question');
-
-  // Fallback: if no XML tags found, treat entire text as reflection
-  if (!reflection && !connection && !question) {
-    return { reflection: rawText.trim(), connection: '', question: '' };
-  }
-
-  return { reflection, connection, question };
 }

@@ -6,44 +6,19 @@
   <meta name="description" content="知识塔罗 —— 从你的知识库中寻找指引">
   <title>知识塔罗</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#000',
-            secondary: '#111',
-            muted: '#999',
-            border: '#ddd',
-            surface: '#fafafa',
-          },
-          fontFamily: {
-            serif: ['"Noto Serif SC"', 'serif'],
-            cinzel: ['"Cinzel"', 'serif'],
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Local CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="bg-white text-primary font-serif min-h-screen flex flex-col">
+<body>
 
-  <!-- ==================== HEADER ==================== -->
-  <header class="relative px-6 py-8 text-center">
-    <!-- Privacy toggle (top-right) -->
-    <div class="absolute top-6 right-6 flex items-center gap-3" id="privacy-toggle-area">
-      <span class="text-sm text-muted" id="mode-label">本地模式</span>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="privacy-area" id="privacy-toggle-area">
+      <span class="mode-label" id="mode-label">本地模式</span>
       <button
         type="button"
         role="switch"
@@ -54,66 +29,44 @@
       >
         <span class="privacy-switch-knob"></span>
       </button>
-      <!-- Tooltip (hidden by default) -->
       <div class="privacy-tooltip hidden" id="privacy-tooltip">
         <p>云端模式会将你的问题和牌面信息发送到 AI 服务进行解读。数据处理受服务商隐私政策约束。</p>
       </div>
     </div>
-
-    <h1 class="font-cinzel text-4xl md:text-5xl text-primary tracking-wider">知识塔罗</h1>
-    <p class="mt-3 text-muted text-lg">从你的知识库中寻找指引</p>
+    <h1 class="site-title">知识塔罗</h1>
+    <p class="site-subtitle">从你的知识库中寻找指引</p>
   </header>
 
-  <!-- ==================== MAIN ==================== -->
-  <main class="flex-1 w-full max-w-4xl mx-auto px-4 pb-12">
+  <!-- MAIN -->
+  <main class="main">
 
     <!-- QUESTION SECTION -->
-    <section class="mb-10" id="question-section">
-      <label for="user-question" class="block mb-3 text-primary text-sm tracking-widest uppercase font-cinzel">
-        你的问题
-      </label>
+    <section class="question-section" id="question-section">
+      <label for="user-question" class="label">你的问题</label>
       <textarea
         id="user-question"
         rows="3"
         placeholder="你带着什么问题？"
-        class="w-full bg-transparent border-2 border-border rounded-xl px-5 py-4 text-primary placeholder-muted
-               focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition-colors resize-none
-               text-lg"
+        class="textarea"
       ></textarea>
 
       <!-- Spread type buttons -->
-      <div class="mt-5 flex flex-wrap items-center justify-center gap-4">
-        <button
-          type="button"
-          data-spread="single"
-          class="spread-btn active"
-        >
-          <span class="text-xl mr-1">&#x1F0CF;</span> 日签
-        </button>
-        <button
-          type="button"
-          data-spread="three"
-          class="spread-btn"
-        >
-          <span class="text-xl mr-1">&#x1F0A0;</span> 三牌阵
-        </button>
+      <div class="spread-buttons">
+        <button type="button" data-spread="single" class="spread-btn active">日签</button>
+        <button type="button" data-spread="three" class="spread-btn">三牌阵</button>
       </div>
 
       <!-- Draw button -->
-      <div class="mt-6 text-center">
-        <button type="button" id="draw-btn" class="draw-btn">
-          开始抽牌
-        </button>
+      <div class="draw-area">
+        <button type="button" id="draw-btn" class="draw-btn">开始抽牌</button>
       </div>
     </section>
 
-    <!-- SPREAD AREA -->
-    <section class="mb-10 hidden" id="spread-area" aria-label="牌阵区域">
+    <!-- CARD AREA -->
+    <section class="card-area hidden" id="spread-area">
       <!-- Single card spread -->
       <div class="spread-single hidden" id="spread-single">
-        <div class="card-slot" data-position="present">
-          <!-- Card will be injected here by JS -->
-        </div>
+        <div class="card-slot" data-position="present"></div>
       </div>
 
       <!-- Three card spread -->
@@ -133,71 +86,46 @@
       </div>
     </section>
 
-    <!-- READING AREA -->
-    <section class="hidden" id="reading-area" aria-label="解读区域">
+    <!-- INTERPRETATION AREA -->
+    <section class="interpretation hidden" id="reading-area">
       <div class="reading-panel">
         <div class="reading-header">
-          <h2 class="font-cinzel text-primary text-xl tracking-wide">牌面解读</h2>
+          <h2 class="reading-title">牌面解读</h2>
           <span class="source-indicator" id="source-indicator"></span>
         </div>
-        <div class="reading-content" id="reading-content">
-          <!-- AI or fallback interpretation goes here -->
-        </div>
+        <div class="reading-content" id="reading-content"></div>
       </div>
     </section>
 
-    <!-- EMPTY STATE (shown when a suit has no cards) -->
-    <section class="hidden text-center py-12" id="empty-state">
-      <div class="text-6xl mb-4">&#x1F3B1;</div>
-      <p class="text-muted text-lg" id="empty-message">
-        你的牌组中还没有这个类别的牌，去写一些笔记吧
-      </p>
+    <!-- EMPTY STATE -->
+    <section class="empty-state hidden" id="empty-state">
+      <p class="empty-message" id="empty-message">你的牌组中还没有这个类别的牌，去写一些笔记吧</p>
     </section>
 
-    <!-- DEEP DIVE PANEL (modal overlay) -->
+    <!-- DEEP DIVE MODAL -->
     <div class="modal-overlay hidden" id="deep-dive-overlay" role="dialog" aria-modal="true" aria-label="牌面详情">
       <div class="modal-panel">
-        <button type="button" class="modal-close" id="deep-dive-close" aria-label="关闭">
-          &times;
-        </button>
-        <div class="modal-content" id="deep-dive-content">
-          <!-- Full card content injected by JS -->
-        </div>
+        <button type="button" class="modal-close" id="deep-dive-close" aria-label="关闭">&times;</button>
+        <div class="modal-content" id="deep-dive-content"></div>
       </div>
     </div>
   </main>
 
-  <!-- ==================== FOOTER ==================== -->
+  <!-- FOOTER -->
   <footer class="stats-bar" id="stats-bar">
-    <div class="flex flex-wrap items-center justify-between gap-4 w-full max-w-4xl mx-auto px-4">
-      <div class="stats-info text-sm text-muted" id="stats-info">
+    <div class="stats-inner">
+      <div class="stats-info" id="stats-info">
         <span id="stat-total">0 张牌</span>
-        <span class="mx-2 text-border">|</span>
+        <span class="stats-divider">|</span>
         <span id="stat-suits"></span>
       </div>
-      <div class="flex gap-3">
-        <button type="button" id="save-btn" class="footer-btn">
-          保存解读
-        </button>
-        <button type="button" id="redraw-btn" class="footer-btn footer-btn-secondary">
-          再抽一次
-        </button>
+      <div class="footer-actions">
+        <button type="button" id="save-btn" class="footer-btn">保存解读</button>
+        <button type="button" id="redraw-btn" class="footer-btn footer-btn-secondary">再抽一次</button>
       </div>
     </div>
   </footer>
 
-  <!-- ==================== SCRIPTS ==================== -->
   <script type="module" src="js/app.js"></script>
-  <script type="module" src="js/deck.js"></script>
-  <script type="module" src="js/renderer.js"></script>
-  <script type="module" src="js/ai.js"></script>
-
-  <!-- Inline fallback: basic interaction without JS modules (progressive enhancement) -->
-  <script>
-    // Minimal no-JS fallback: if modules fail, show draw button still works visually
-    document.addEventListener('DOMContentLoaded', () => {
-      document.body.classList.add('js-loaded');
-    });
-  </script>
 </body>
 </html>
