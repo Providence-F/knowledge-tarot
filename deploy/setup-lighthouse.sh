@@ -76,14 +76,31 @@ mkdir -p "$DATA_DIR/users"
 chown -R "$APP_USER:$APP_USER" "$DATA_DIR"
 
 ENV_FILE="$APP_DIR/.env"
-if [[ ! -f "$ENV_FILE" ]]; then
-  log "生成 .env 模板（需要你手动填 DEEPSEEK_API_KEY）"
-  cat > "$ENV_FILE" <<EOF
-# Knowledge Tarot 生产环境配置
+# 支持通过环境变量 DEEPSEEK_API_KEY 一次性写入（curl ... | sudo DEEPSEEK_API_KEY=sk-xxx bash 不会传环境变量
+# 所以脚本支持两种方式：1) 命令行参数 --key=sk-xxx  2) 提前 export DEEPSEEK_API_KEY）
+INJECTED_KEY="${DEEPSEEK_API_KEY:-}"
+for arg in "$@"; do
+  case "$arg" in
+    --key=*) INJECTED_KEY="${arg#*=}" ;;
+  esac
+done
+
+if [[ ! -f "$ENV_FILE" ]] || ! grep -q "^DEEPSEEK_API_KEY=sk-" "$ENV_FILE" 2>/dev/null; then
+  if [[ -n "$INJECTED_KEY" && "$INJECTED_KEY" == sk-* ]]; then
+    log "写入 .env（含 DEEPSEEK_API_KEY）"
+    cat > "$ENV_FILE" <<EOF
+NODE_ENV=production
+PORT=3456
+DEEPSEEK_API_KEY=$INJECTED_KEY
+EOF
+  else
+    log "生成 .env 模板（需要你手动填 DEEPSEEK_API_KEY）"
+    cat > "$ENV_FILE" <<EOF
 NODE_ENV=production
 PORT=3456
 DEEPSEEK_API_KEY=请把你的-DEEPSEEK-API-KEY-粘贴到这里
 EOF
+  fi
   chown "$APP_USER:$APP_USER" "$ENV_FILE"
   chmod 600 "$ENV_FILE"
 fi
