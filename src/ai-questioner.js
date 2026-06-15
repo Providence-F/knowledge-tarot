@@ -172,7 +172,7 @@ function buildThreeUserMsg(cards, question) {
 
 function buildDialogueSys(style) {
   const guide = STYLE_GUIDE[style] || STYLE_GUIDE.gentle;
-  return `你是一个用苏格拉底式提问的陪伴者。围绕一张牌，与用户深度对话。
+  return `你是一个用苏格拉底式提问的陪伴者。围绕一张或几张牌，与用户深度对话。
 不告诉用户答案，只通过问题让 ta 自己想出来。每轮只问一个问题。
 
 ${guide}
@@ -184,20 +184,55 @@ ${COMMON_BAN}
 - 顺着用户上轮回答深挖，不要跳话题
 - 用户回避时不戳破，换个角度再问
 - 用户卡住时给一个具体的小切口（"上次让你这样想的时候是什么时候？"）
+- 如果有多张牌，把它们当成一个整体情境，不要分开解读
 
 只输出 JSON：{"question": "你下一个问题"}`;
 }
 
-async function dialogueTurn(card, transcript, style = 'gentle') {
-  const cardBody = card.contentType === 'analysis'
-    ? `核心：${card.summary}\n要点：${(card.insights || []).join('；')}`
-    : (card.passage || card.summary || card.title);
+function cardBodyText(card) {
+  if (card.contentType === 'analysis') {
+    return `核心：${card.summary || ''}\n要点：${(card.insights || []).join('；')}`;
+  }
+  return card.passage || card.summary || card.title || '';
+}
+
+const FALLBACK_OPENERS = [
+  '让你这样写下来的那一刻，发生了什么？',
+  '看到这张牌出现在面前，你身体先有反应还是脑子先有反应？',
+  '你写下这段话的时候，是想给谁看？',
+  '如果这张牌是过去的你寄给现在的你的一封信，开头第一句你会读出来吗？',
+  '这段文字里你最想绕开的是哪一句？',
+  '现在让你最不想回答的那个问题，其实是什么？'
+];
+
+function pickFallbackOpener(userQuestion) {
+  if (userQuestion && userQuestion.trim()) {
+    return `你刚才问"${userQuestion.trim()}"——这个问题里，最让你卡住的部分是什么？`;
+  }
+  return FALLBACK_OPENERS[Math.floor(Math.random() * FALLBACK_OPENERS.length)];
+}
+
+async function dialogueTurn(cardOrCards, transcript, style = 'gentle', userQuestion = '') {
+  const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
+
+  // 首轮且没有用户输入 → 直接走保底，不烧 LLM
+  if ((!transcript || transcript.length === 0) && cards.length > 0) {
+    // 仍然走 LLM 拿一个针对内容的开场，但失败兜底
+  }
+
+  const cardsBlock = cards.map((c, i) => {
+    const head = cards.length > 1
+      ? `【第 ${i + 1} 张${c.positionName ? ' · ' + c.positionName : ''}】牌名：${c.title || '—'}`
+      : `牌名：${c.title || '—'}`;
+    return `${head}\n${cardBodyText(c).slice(0, 600)}`;
+  }).join('\n\n');
 
   const transcriptText = (transcript || []).map(t =>
     `${t.role === 'ai' ? 'AI' : '用户'}：${t.text}`
   ).join('\n');
 
-  const userMsg = `这张牌：\n${cardBody.slice(0, 800)}\n\n对话记录：\n${transcriptText || '（这是对话开始）'}`;
+  const userMsg = (userQuestion ? `用户最初的问题：${userQuestion}\n\n` : '')
+    + `牌：\n${cardsBlock}\n\n对话记录：\n${transcriptText || '（这是对话开始，请抛出第一个问题——可以贴近用户最初的问题，也可以从牌内容切入）'}`;
 
   try {
     const result = await callJSON(buildDialogueSys(style), userMsg, {
@@ -210,7 +245,7 @@ async function dialogueTurn(card, transcript, style = 'gentle') {
   } catch (e) {
     console.error('[dialogueTurn] error:', e.message);
   }
-  return '让你这样写下来的那一刻，发生了什么？';
+  return pickFallbackOpener(userQuestion);
 }
 
-module.exports = { nameCards, askSingle, askThree, dialogueTurn };
+module.exports = { nameCards, askSingle, askThree, dialogueTurn, FALLBACK_OPENERS };

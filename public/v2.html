@@ -28,31 +28,163 @@
 </head>
 <body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
 
-  <!-- Header -->
-  <header class="border-b border-tarot-border">
-    <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center">
-          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-          </svg>
+  <!-- Onboarding Wall（首次进入选模式） -->
+  <div id="onboardingModal" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-3 top-[5vh] bottom-[5vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[6vh] md:bottom-[6vh] md:w-[720px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-7 pt-7 pb-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center">
+            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-tarot-muted">Knowledge Tarot</div>
+            <h2 class="font-serif text-2xl text-black font-bold leading-tight">用谁的内容来抽牌？</h2>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl font-bold text-black tracking-wide">Knowledge Tarot</h1>
-          <p class="text-xs text-tarot-muted">知识塔罗 — 你和你过去的内容做自我对话</p>
+        <p class="text-sm text-tarot-muted">塔罗牌不是预言工具，是一面镜子。先选一份"镜面"。</p>
+      </div>
+      <div class="flex-1 overflow-y-auto px-7 pb-3 space-y-4">
+        <button id="onbPrivate" class="w-full text-left p-5 border-2 border-black rounded-xl bg-black text-white hover:bg-tarot-ivory transition group">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <div class="font-serif font-bold text-lg">导入我自己的内容</div>
+            <span class="text-[10px] tracking-wider uppercase bg-white/20 px-2 py-0.5 rounded-full">推荐</span>
+          </div>
+          <div class="text-sm opacity-85 leading-relaxed">日记、笔记、和 AI 的对话、读书摘抄。<br>AI 切片成专属牌堆，你和过去的自己对话。</div>
+          <div class="text-[11px] opacity-60 mt-3">⏱ 上传到抽第一张牌大约 1–10 分钟</div>
+        </button>
+
+        <button id="onbPublic" class="w-full text-left p-5 border border-tarot-border rounded-xl hover:border-black/40 transition">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <div class="font-serif font-bold text-lg text-black">先用公共牌堆试玩</div>
+            <span class="text-[10px] tracking-wider uppercase bg-tarot-accent text-tarot-muted px-2 py-0.5 rounded-full">DEMO</span>
+          </div>
+          <div class="text-sm text-tarot-ivory leading-relaxed" id="onbPublicDesc">
+            <span class="font-medium">创始人和 DeepSeek 的一年隐私对话</span><br>
+            <span class="text-tarot-muted">已脱敏，作为示例牌堆开放。可以抽牌、对话，体验一遍这个产品长什么样。</span>
+          </div>
+          <div class="text-[11px] text-tarot-muted mt-3" id="onbPublicSize">载入中…</div>
+        </button>
+      </div>
+      <div class="px-7 py-4 border-t border-tarot-border bg-tarot-accent/40">
+        <div class="text-[11px] text-tarot-muted leading-relaxed">
+          <span class="font-medium text-tarot-ivory">关于隐私：</span>
+          你导入的内容会保存在 Knowledge Tarot 服务器上，仅你本人可见，可能用于改进产品质量。
+          <a href="#" id="privacyLink" class="underline hover:text-black ml-1">隐私说明</a>
         </div>
       </div>
-      <div class="flex items-center gap-3 text-sm">
-        <span id="deckBadge" class="text-xs text-tarot-muted"></span>
-        <select id="styleSelect" class="bg-white border border-tarot-border rounded-lg px-3 py-1.5 text-xs text-tarot-ivory focus:outline-none focus:border-black/40">
-          <option value="gentle">温柔陪伴</option>
-          <option value="sharp">一针见血</option>
-          <option value="philosophical">哲学思辨</option>
-          <option value="playful">玩味段子手</option>
-        </select>
-        <a href="v2-import.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">
-          导入内容
-        </a>
+    </div>
+  </div>
+
+  <!-- Privacy Modal -->
+  <div id="privacyModal" class="fixed inset-0 z-[70] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="privacyOverlay"></div>
+    <div class="absolute inset-x-3 top-[8vh] bottom-[8vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[8vh] md:bottom-[8vh] md:w-[640px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-7 py-5 border-b border-tarot-border flex items-center justify-between">
+        <h3 class="font-serif font-bold text-xl text-black">隐私说明</h3>
+        <button id="privacyClose" class="text-tarot-muted hover:text-black">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-7 py-6 text-sm leading-relaxed text-tarot-ivory space-y-4">
+        <div>
+          <h4 class="font-bold text-black mb-1.5">收集什么</h4>
+          <p class="text-tarot-muted">你主动导入或粘贴的笔记、对话、文本内容；你抽牌时输入的问题；你和 AI 的对话内容；浏览器自动签发的匿名身份码（32 位字符，无个人信息）。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-black mb-1.5">怎么存</h4>
+          <p class="text-tarot-muted">数据存在 Knowledge Tarot 的服务器上，按你的匿名身份码隔离。其他用户拿不到你的牌堆。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-black mb-1.5">怎么用</h4>
+          <p class="text-tarot-muted">仅用于：(1) 给你本人提供抽牌和对话功能；(2) 用聚合的、去标识的形式分析使用模式以改进产品。不会用于训练对外的大模型，不会向第三方出售或共享。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-black mb-1.5">怎么删</h4>
+          <p class="text-tarot-muted">在 "我的牌库 → 牌堆 / 抽牌历史 / 对话历史" 里可以单独或批量删除。删除即从服务器移除。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-black mb-1.5">公共牌堆</h4>
+          <p class="text-tarot-muted">"创始人和 DeepSeek 的一年隐私对话" 是创始人 Kai 自愿公开的，已经做了去标识处理。试玩公共牌堆时，你的抽牌和对话不会被保存。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-black mb-1.5">联系</h4>
+          <p class="text-tarot-muted">如有疑问或要求删除全部数据，请通过项目仓库 issue 联系。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode Banner（公共模式提示） -->
+  <div id="modeBanner" class="hidden bg-tarot-accent border-b border-tarot-border">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs">
+      <div class="flex items-center gap-2 text-tarot-ivory min-w-0">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-black text-white rounded-full text-[10px] tracking-wider uppercase font-medium shrink-0">DEMO</span>
+        <span class="truncate">正在使用公共牌堆 · <span class="text-tarot-muted" id="modeBannerName">创始人和 DeepSeek 的一年隐私对话</span></span>
+      </div>
+      <button id="switchToPrivate" class="text-tarot-muted hover:text-black underline shrink-0">导入我自己的内容 →</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="border-b border-tarot-border">
+    <div class="max-w-6xl mx-auto px-4 py-4 md:py-6">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg md:text-xl font-bold text-black tracking-wide truncate">Knowledge Tarot</h1>
+            <p class="hidden md:block text-xs text-tarot-muted">知识塔罗 — 你和你过去的内容做自我对话</p>
+          </div>
+        </div>
+        <!-- 桌面端右侧栏 -->
+        <div class="hidden md:flex items-center gap-3 text-sm">
+          <span id="deckBadge" class="text-xs text-tarot-muted"></span>
+          <span id="userIdBadge" class="hidden text-[10px] text-tarot-muted font-mono px-2 py-0.5 rounded bg-tarot-accent" title="你的牌库身份"></span>
+          <select id="styleSelect" class="bg-white border border-tarot-border rounded-lg px-3 py-1.5 text-xs text-tarot-ivory focus:outline-none focus:border-black/40">
+            <option value="gentle">温柔陪伴</option>
+            <option value="sharp">一针见血</option>
+            <option value="philosophical">哲学思辨</option>
+            <option value="playful">玩味段子手</option>
+          </select>
+          <a href="v2-library.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">我的牌库</a>
+          <a href="v2-import.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">导入内容</a>
+        </div>
+        <!-- 移动端右侧：deckBadge 简版 + 汉堡 -->
+        <div class="flex md:hidden items-center gap-2 shrink-0">
+          <span id="deckBadgeMobile" class="text-[11px] text-tarot-muted"></span>
+          <button id="navToggle" aria-label="菜单" class="w-10 h-10 flex items-center justify-center rounded-lg border border-tarot-border hover:bg-tarot-accent transition">
+            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <!-- 移动端折叠菜单 -->
+      <div id="navMenu" class="md:hidden hidden mt-3 pt-3 border-t border-tarot-border space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-tarot-muted">回应风格</span>
+          <select id="styleSelectMobile" class="bg-white border border-tarot-border rounded-lg px-3 py-2 text-xs text-tarot-ivory focus:outline-none focus:border-black/40 min-h-[40px]">
+            <option value="gentle">温柔陪伴</option>
+            <option value="sharp">一针见血</option>
+            <option value="philosophical">哲学思辨</option>
+            <option value="playful">玩味段子手</option>
+          </select>
+        </div>
+        <div id="userIdBadgeMobileWrap" class="hidden flex items-center justify-between text-xs">
+          <span class="text-tarot-muted">身份</span>
+          <span id="userIdBadgeMobile" class="text-[10px] text-tarot-muted font-mono px-2 py-1 rounded bg-tarot-accent"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <a href="v2-library.html" class="block text-center px-3 py-2.5 border border-tarot-border rounded-lg text-sm text-black hover:bg-tarot-accent transition min-h-[44px] flex items-center justify-center">我的牌库</a>
+          <a href="v2-import.html" class="block text-center px-3 py-2.5 border border-tarot-border rounded-lg text-sm text-black hover:bg-tarot-accent transition min-h-[44px] flex items-center justify-center">导入内容</a>
+        </div>
       </div>
     </div>
   </header>
@@ -138,6 +270,12 @@
               <div class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
               <span>正在感受你的牌阵...</span>
             </div>
+            <div class="mt-5 pt-5 border-t border-tarot-border flex justify-center">
+              <button id="openDialogueBtn" class="hidden px-6 py-2.5 bg-black text-white rounded-full text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                深度对话
+              </button>
+            </div>
           </div>
         </div>
 
@@ -152,6 +290,28 @@
 
     </section>
   </main>
+
+  <!-- 卡片详情 modal -->
+  <div id="cardDetailModal" class="fixed inset-0 z-40 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="cardDetailOverlay"></div>
+    <div class="absolute inset-x-3 top-6 bottom-6 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[5vh] md:bottom-[5vh] md:w-[760px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-7 py-5 border-b border-tarot-border flex items-start justify-between gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-tarot-muted uppercase tracking-wider mb-1.5" id="cardDetailMeta"></div>
+          <div class="font-serif font-bold text-2xl text-black leading-tight" id="cardDetailTitle"></div>
+          <div class="hidden mt-2 text-[11px] text-tarot-muted" id="cardDetailLoading">加载完整内容…</div>
+        </div>
+        <button id="cardDetailClose" class="text-tarot-muted hover:text-black p-1 -m-1 shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="cardDetailBody" class="flex-1 overflow-y-auto px-7 py-6 card-detail-body"></div>
+      <div class="px-7 py-3 border-t border-tarot-border text-[11px] text-tarot-muted flex items-center justify-between">
+        <span id="cardDetailCount"></span>
+        <span class="opacity-60">Esc 关闭</span>
+      </div>
+    </div>
+  </div>
 
   <!-- 深度对话 modal（保留极简风格） -->
   <div id="dialogueModal" class="fixed inset-0 z-50 hidden">

@@ -49,10 +49,17 @@ function getOrCreateUser(userId) {
     profile = {
       id: userId,
       createdAt: Date.now(),
-      style: 'gentle'  // gentle | sharp | philosophical | playful
+      style: 'gentle',  // gentle | sharp | philosophical | playful
+      mode: null,        // null | 'public' | 'private'   未选 = 显示引导墙
+      onboardedAt: null
     };
     writeJSON(profilePath, profile);
   }
+  // 兼容老 profile：补字段
+  let dirty = false;
+  if (profile.mode === undefined) { profile.mode = null; dirty = true; }
+  if (profile.onboardedAt === undefined) { profile.onboardedAt = null; dirty = true; }
+  if (dirty) writeJSON(profilePath, profile);
   return profile;
 }
 
@@ -88,6 +95,21 @@ function appendCards(userId, newCards, sourceMeta) {
   return { added: added.length, total: deck.cards.length };
 }
 
+function removeCard(userId, cardId) {
+  const deck = getDeck(userId);
+  const before = deck.cards.length;
+  deck.cards = deck.cards.filter(c => c.id !== cardId);
+  if (deck.cards.length === before) return { removed: 0, total: before };
+  deck.meta = { ...(deck.meta || {}), updatedAt: Date.now(), totalCards: deck.cards.length };
+  saveDeck(userId, deck);
+  return { removed: 1, total: deck.cards.length };
+}
+
+function clearDeck(userId) {
+  saveDeck(userId, { meta: { updatedAt: Date.now(), totalCards: 0, lastImport: null }, cards: [] });
+  return { total: 0 };
+}
+
 // ── History ─────────────────────────────────────────────
 
 function getHistory(userId) {
@@ -101,6 +123,20 @@ function appendHistory(userId, entry) {
   const trimmed = history.slice(0, 200);
   writeJSON(path.join(userDir(userId), 'history.json'), trimmed);
   return trimmed;
+}
+
+function removeHistoryEntry(userId, drawnAt) {
+  const history = getHistory(userId);
+  const before = history.length;
+  const after = history.filter(h => h.drawnAt !== drawnAt);
+  if (after.length === before) return { removed: 0 };
+  writeJSON(path.join(userDir(userId), 'history.json'), after);
+  return { removed: 1 };
+}
+
+function clearHistory(userId) {
+  writeJSON(path.join(userDir(userId), 'history.json'), []);
+  return { ok: true };
 }
 
 function getRecentDrawnIds(userId, days = 7) {
@@ -122,6 +158,7 @@ function saveDialogue(userId, dialogue) {
   const dir = path.join(userDir(userId), 'dialogues');
   ensureDir(dir);
   const id = dialogue.id || crypto.randomBytes(8).toString('hex');
+  if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error('Invalid dialogue id');
   const file = path.join(dir, `${id}.json`);
   const data = { id, ...dialogue, updatedAt: Date.now() };
   writeJSON(file, data);
@@ -133,16 +170,55 @@ function getDialogue(userId, dialogueId) {
   return readJSON(path.join(userDir(userId), 'dialogues', `${dialogueId}.json`), null);
 }
 
+function listDialogues(userId) {
+  const dir = path.join(userDir(userId), 'dialogues');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.json'))
+    .map(f => readJSON(path.join(dir, f), null))
+    .filter(Boolean)
+    .map(d => ({
+      id: d.id,
+      cardIds: d.cardIds || (d.cardId ? [d.cardId] : []),
+      cardTitles: d.cardTitles || [],
+      style: d.style,
+      turns: (d.transcript || []).length,
+      updatedAt: d.updatedAt,
+      createdAt: d.createdAt || d.updatedAt
+    }))
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+}
+
+function removeDialogue(userId, dialogueId) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(dialogueId)) return { removed: 0 };
+  const file = path.join(userDir(userId), 'dialogues', `${dialogueId}.json`);
+  if (!fs.existsSync(file)) return { removed: 0 };
+  fs.unlinkSync(file);
+  return { removed: 1 };
+}
+
+function userExists(userId) {
+  if (!/^[a-f0-9]{32}$/.test(userId)) return false;
+  return fs.existsSync(path.join(DATA_ROOT, userId));
+}
+
 module.exports = {
   newUserId,
+  userExists,
   getOrCreateUser,
   updateUser,
   getDeck,
   saveDeck,
   appendCards,
+  removeCard,
+  clearDeck,
   getHistory,
   appendHistory,
+  removeHistoryEntry,
+  clearHistory,
   getRecentDrawnIds,
   saveDialogue,
-  getDialogue
+  getDialogue,
+  listDialogues,
+  removeDialogue
 };

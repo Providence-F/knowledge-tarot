@@ -50,6 +50,7 @@ async function extract(rawItem) {
     contentType: 'opinion',
     title: rawItem.title || '',
     passage,
+    fullPassage: cleanBody,
     summary,
     insights: null
   };

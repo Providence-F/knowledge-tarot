@@ -11,11 +11,13 @@ const { cleanForDisplay, truncateAtBoundary } = require('../utils');
 
 function extract(rawItem) {
   const body = (rawItem.body || '').replace(/^---[\s\S]*?---\r?\n/, '');
-  const passage = truncateAtBoundary(cleanForDisplay(body), 500);
+  const cleaned = cleanForDisplay(body);
+  const passage = truncateAtBoundary(cleaned, 500);
   return {
     contentType: 'reflection',
     title: rawItem.title || '',
     passage,
+    fullPassage: cleaned,
     summary: '',
     insights: null
   };

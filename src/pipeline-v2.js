@@ -80,6 +80,7 @@ async function processItems(rawItems, onProgress, concurrency = 6) {
           title: fields.title,
           summary: fields.summary,
           passage: fields.passage,
+          fullPassage: fields.fullPassage || fields.passage || '',
           insights: fields.insights,
           suit: suit.suitId,
           suitName: suit.suitName,

@@ -63,7 +63,8 @@ async function extract(rawItem) {
   return {
     contentType: 'analysis',
     title: rawItem.title || '',
-    passage: '',  // 分析类不展示原文
+    passage: '',
+    fullPassage: cleanBody,
     summary,
     insights
   };

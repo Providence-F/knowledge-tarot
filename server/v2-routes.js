@@ -22,6 +22,7 @@ const path = require('path');
 const fs = require('fs');
 
 const storage = require('../src/storage');
+const publicDeck = require('../src/public-deck');
 const { processItems } = require('../src/pipeline-v2');
 const textdump = require('../src/adapters/textdump');
 const chatgpt = require('../src/adapters/chatgpt');
@@ -52,10 +53,20 @@ router.use((req, res, next) => {
 router.get('/me', (req, res) => {
   const profile = storage.getOrCreateUser(req.userId);
   const deck = storage.getDeck(req.userId);
+  const pubMeta = publicDeck.getMeta();
   res.json({
     user: profile,
+    userId: req.userId,
+    userIdShort: req.userId.slice(0, 8),
     deckSize: deck.cards.length,
-    lastImport: deck.meta?.lastImport || null
+    lastImport: deck.meta?.lastImport || null,
+    publicDeck: pubMeta ? {
+      available: publicDeck.isReady(),
+      name: pubMeta.name,
+      description: pubMeta.description,
+      totalCards: pubMeta.totalCards,
+      sourceLabel: pubMeta.sourceLabel
+    } : { available: false }
   });
 });
 
@@ -66,6 +77,20 @@ router.post('/me/style', express.json(), (req, res) => {
     return res.status(400).json({ error: 'Invalid style' });
   }
   const profile = storage.updateUser(req.userId, { style });
+  res.json({ user: profile });
+});
+
+// ── /api/v2/me/mode ──────────────────────────────────────
+// 引导墙选择：'public' = 用公共牌堆试玩；'private' = 导入自己内容
+router.post('/me/mode', express.json(), (req, res) => {
+  const mode = req.body?.mode;
+  if (!['public', 'private'].includes(mode)) {
+    return res.status(400).json({ error: 'mode must be "public" or "private"' });
+  }
+  if (mode === 'public' && !publicDeck.isReady()) {
+    return res.status(503).json({ error: '公共牌堆暂未就绪，请稍后再试或选择导入自己的内容' });
+  }
+  const profile = storage.updateUser(req.userId, { mode, onboardedAt: Date.now() });
   res.json({ user: profile });
 });
 
@@ -161,7 +186,22 @@ router.post('/import/files', upload.array('files', 50), async (req, res) => {
 
 // ── /api/v2/deck ─────────────────────────────────────────
 // 返回轻量版（不含 passage/insights 等大字段，给 UI 列表用）
+// 支持 ?mode=public 查看公共牌堆
 router.get('/deck', (req, res) => {
+  const mode = req.query.mode === 'public' ? 'public' : 'private';
+  if (mode === 'public') {
+    if (!publicDeck.isReady()) return res.json({ meta: null, cards: [], total: 0 });
+    const cards = publicDeck.getCards();
+    const lite = cards.map(c => ({
+      id: c.id,
+      title: c.title,
+      suit: c.suit,
+      suitName: c.suitName,
+      contentType: c.contentType,
+      createdAt: c.createdAt
+    }));
+    return res.json({ meta: publicDeck.getMeta(), cards: lite, total: lite.length, isPublic: true });
+  }
   const deck = storage.getDeck(req.userId);
   const lite = deck.cards.map(c => ({
     id: c.id,
@@ -176,22 +216,33 @@ router.get('/deck', (req, res) => {
 
 // 单张牌完整内容（深度探索时拉取）
 router.get('/deck/card/:id', (req, res) => {
+  // 先查私牌堆，再 fallback 到公共牌堆（让两边的 id 都能解析）
   const deck = storage.getDeck(req.userId);
-  const card = deck.cards.find(c => c.id === req.params.id);
+  let card = deck.cards.find(c => c.id === req.params.id);
+  if (!card) card = publicDeck.getCardById(req.params.id);
   if (!card) return res.status(404).json({ error: 'Card not found' });
   res.json(card);
 });
+
+// 抽牌时根据 profile.mode 决定用哪副牌
+function pickDeckForUser(profile, userId) {
+  if (profile.mode === 'public' && publicDeck.isReady()) {
+    return { cards: publicDeck.getCards(), isPublic: true };
+  }
+  const deck = storage.getDeck(userId);
+  return { cards: deck.cards, isPublic: false };
+}
 
 // ── /api/v2/draw/single ──────────────────────────────────
 router.post('/draw/single', express.json(), async (req, res) => {
   const question = (req.body?.question || '').trim();
   const profile = storage.getOrCreateUser(req.userId);
   const style = profile.style || 'gentle';
-  const deck = storage.getDeck(req.userId);
-  if (deck.cards.length === 0) return res.status(400).json({ error: 'Empty deck. Import content first.' });
+  const { cards: pool, isPublic } = pickDeckForUser(profile, req.userId);
+  if (pool.length === 0) return res.status(400).json({ error: 'Empty deck. Import content first.' });
 
-  const excludeIds = storage.getRecentDrawnIds(req.userId, 7);
-  const card = drawEngine.drawSingle(deck.cards, excludeIds);
+  const excludeIds = isPublic ? new Set() : storage.getRecentDrawnIds(req.userId, 7);
+  const card = drawEngine.drawSingle(pool, excludeIds);
   if (!card) return res.status(500).json({ error: 'Failed to draw' });
 
   // 并行：起牌名 + 提问
@@ -201,13 +252,16 @@ router.post('/draw/single', express.json(), async (req, res) => {
   ]);
   card.title = titles[0] || card.title || '—';
 
-  storage.appendHistory(req.userId, {
-    spread: 'single',
-    question: question || null,
-    cardIds: [card.id]
-  });
+  // 公共牌堆抽牌不计入用户的 history（让公共体验真正"无痕")
+  if (!isPublic) {
+    storage.appendHistory(req.userId, {
+      spread: 'single',
+      question: question || null,
+      cardIds: [card.id]
+    });
+  }
 
-  res.json({ card, questions, style });
+  res.json({ card, questions, style, isPublic });
 });
 
 // ── /api/v2/draw/three ───────────────────────────────────
@@ -215,11 +269,11 @@ router.post('/draw/three', express.json(), async (req, res) => {
   const question = (req.body?.question || '').trim();
   const profile = storage.getOrCreateUser(req.userId);
   const style = profile.style || 'gentle';
-  const deck = storage.getDeck(req.userId);
-  if (deck.cards.length < 3) return res.status(400).json({ error: 'Need at least 3 cards in deck.' });
+  const { cards: pool, isPublic } = pickDeckForUser(profile, req.userId);
+  if (pool.length < 3) return res.status(400).json({ error: 'Need at least 3 cards in deck.' });
 
-  const excludeIds = storage.getRecentDrawnIds(req.userId, 7);
-  const cards = drawEngine.drawThree(deck.cards, excludeIds);
+  const excludeIds = isPublic ? new Set() : storage.getRecentDrawnIds(req.userId, 7);
+  const cards = drawEngine.drawThree(pool, excludeIds);
   if (cards.length < 3) return res.status(500).json({ error: 'Failed to draw three' });
 
   // 并行：起 3 张牌名 + 三牌阵叙事
@@ -229,28 +283,116 @@ router.post('/draw/three', express.json(), async (req, res) => {
   ]);
   cards.forEach((c, i) => { c.title = titles[i] || c.title || '—'; });
 
-  storage.appendHistory(req.userId, {
-    spread: 'three',
-    question: question || null,
-    cardIds: cards.map(c => c.id)
-  });
+  if (!isPublic) {
+    storage.appendHistory(req.userId, {
+      spread: 'three',
+      question: question || null,
+      cardIds: cards.map(c => c.id)
+    });
+  }
 
-  res.json({ cards, narrative, style });
+  res.json({ cards, narrative, style, isPublic });
 });
 
 // ── /api/v2/dialogue/turn ────────────────────────────────
 router.post('/dialogue/turn', express.json(), async (req, res) => {
-  const { cardId, transcript = [] } = req.body || {};
-  if (!cardId) return res.status(400).json({ error: 'cardId required' });
-
-  const deck = storage.getDeck(req.userId);
-  const card = deck.cards.find(c => c.id === cardId);
-  if (!card) return res.status(404).json({ error: 'Card not found' });
+  const { cardId, cardIds, dialogueId, transcript = [], userQuestion = '' } = req.body || {};
+  const ids = Array.isArray(cardIds) && cardIds.length > 0
+    ? cardIds
+    : (cardId ? [cardId] : []);
+  if (ids.length === 0) return res.status(400).json({ error: 'cardId or cardIds required' });
 
   const profile = storage.getOrCreateUser(req.userId);
+  const isPublic = profile.mode === 'public';
+
+  // 私牌堆找不到时 fallback 到公共牌堆，反过来同理（id 唯一即可命中）
+  const personalDeck = storage.getDeck(req.userId);
+  const cards = ids.map(id => {
+    return personalDeck.cards.find(c => c.id === id)
+      || publicDeck.getCardById(id)
+      || null;
+  }).filter(Boolean);
+  if (cards.length === 0) return res.status(404).json({ error: 'Cards not found' });
+
   const style = profile.style || 'gentle';
-  const question = await ai.dialogueTurn(card, transcript, style);
-  res.json({ question, style });
+  const question = await ai.dialogueTurn(cards, transcript, style, userQuestion);
+
+  // 公共牌堆下 dialogue 不落盘（试玩模式无痕）；private 模式才存档
+  let savedId = dialogueId;
+  if (!isPublic) {
+    const newTranscript = [...(transcript || []), { role: 'ai', text: question }];
+    const id = (dialogueId && /^[a-zA-Z0-9_-]+$/.test(dialogueId))
+      ? dialogueId
+      : require('crypto').randomBytes(8).toString('hex');
+    const saved = storage.saveDialogue(req.userId, {
+      id,
+      cardIds: ids,
+      cardTitles: cards.map(c => c.title || '—'),
+      style,
+      userQuestion: userQuestion || null,
+      transcript: newTranscript,
+      createdAt: (storage.getDialogue(req.userId, id)?.createdAt) || Date.now()
+    });
+    savedId = saved.id;
+  }
+
+  res.json({ question, style, dialogueId: savedId || null, isPublic });
+});
+
+// ── /api/v2/dialogues ────────────────────────────────────
+router.get('/dialogues', (req, res) => {
+  res.json({ dialogues: storage.listDialogues(req.userId) });
+});
+
+router.get('/dialogues/:id', (req, res) => {
+  const d = storage.getDialogue(req.userId, req.params.id);
+  if (!d) return res.status(404).json({ error: 'Not found' });
+  res.json(d);
+});
+
+router.delete('/dialogues/:id', (req, res) => {
+  res.json(storage.removeDialogue(req.userId, req.params.id));
+});
+
+// ── 牌堆管理 ─────────────────────────────────────────────
+router.delete('/deck', (req, res) => {
+  res.json(storage.clearDeck(req.userId));
+});
+
+router.delete('/deck/card/:id', (req, res) => {
+  res.json(storage.removeCard(req.userId, req.params.id));
+});
+
+// ── 历史管理 ─────────────────────────────────────────────
+router.delete('/history', (req, res) => {
+  res.json(storage.clearHistory(req.userId));
+});
+
+router.delete('/history/:drawnAt', (req, res) => {
+  const t = parseInt(req.params.drawnAt, 10);
+  if (!t) return res.status(400).json({ error: 'Invalid drawnAt' });
+  res.json(storage.removeHistoryEntry(req.userId, t));
+});
+
+// ── 身份导出 / 导入 ──────────────────────────────────────
+router.get('/me/export', (req, res) => {
+  res.json({ userId: req.userId });
+});
+
+router.post('/me/import', express.json(), (req, res) => {
+  const target = (req.body?.userId || '').trim();
+  if (!/^[a-f0-9]{32}$/.test(target)) {
+    return res.status(400).json({ error: '身份码格式不对（应为 32 位十六进制）' });
+  }
+  if (!storage.userExists(target)) {
+    return res.status(404).json({ error: '没找到这个身份的牌库（可能拼错了或从未在本服务创建）' });
+  }
+  res.cookie('kt_uid', target, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 365 * 86400000
+  });
+  res.json({ ok: true, userId: target });
 });
 
 // ── /api/v2/history ──────────────────────────────────────

@@ -47,6 +47,7 @@
       <a href="v2.html" class="text-sm text-tarot-muted hover:text-black transition-colors flex items-center gap-1">
         <span>← 返回抽牌</span>
       </a>
+      <a href="v2-library.html" class="ml-3 text-sm text-tarot-muted hover:text-black transition-colors">我的牌库</a>
     </div>
   </header>
 
@@ -118,7 +119,43 @@
       </ul>
     </section>
 
+    <!-- 隐私提示 -->
+    <section class="mt-8 pt-6 border-t border-tarot-border text-[11px] text-tarot-muted leading-relaxed">
+      <span class="font-medium text-tarot-ivory">关于隐私：</span>
+      你导入的内容会保存在 Knowledge Tarot 服务器上，仅你本人可见，可能用于改进产品质量。
+      <a href="#" id="privacyLink" class="underline hover:text-black ml-1">查看隐私说明</a>
+    </section>
+
   </main>
+
+  <!-- Privacy Modal -->
+  <div id="privacyModal" class="fixed inset-0 z-[70] hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="privacyOverlay"></div>
+    <div class="absolute inset-x-3 top-[8vh] bottom-[8vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[8vh] md:bottom-[8vh] md:w-[640px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-7 py-5 border-b border-tarot-border flex items-center justify-between">
+        <h3 class="font-serif font-bold text-xl text-black">隐私说明</h3>
+        <button id="privacyClose" class="text-tarot-muted hover:text-black">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-7 py-6 text-sm leading-relaxed text-tarot-ivory space-y-4">
+        <div><h4 class="font-bold text-black mb-1.5">收集什么</h4><p class="text-tarot-muted">你主动导入或粘贴的笔记、对话、文本内容；你抽牌时输入的问题；你和 AI 的对话内容；浏览器自动签发的匿名身份码（32 位字符，无个人信息）。</p></div>
+        <div><h4 class="font-bold text-black mb-1.5">怎么存</h4><p class="text-tarot-muted">数据存在 Knowledge Tarot 的服务器上，按你的匿名身份码隔离。其他用户拿不到你的牌堆。</p></div>
+        <div><h4 class="font-bold text-black mb-1.5">怎么用</h4><p class="text-tarot-muted">仅用于：(1) 给你本人提供抽牌和对话功能；(2) 用聚合的、去标识的形式分析使用模式以改进产品。不会用于训练对外的大模型，不会向第三方出售或共享。</p></div>
+        <div><h4 class="font-bold text-black mb-1.5">怎么删</h4><p class="text-tarot-muted">在 "我的牌库 → 牌堆 / 抽牌历史 / 对话历史" 里可以单独或批量删除。删除即从服务器移除。</p></div>
+        <div><h4 class="font-bold text-black mb-1.5">联系</h4><p class="text-tarot-muted">如有疑问或要求删除全部数据，请通过项目仓库 issue 联系。</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('privacyLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('privacyModal').classList.remove('hidden');
+    });
+    document.getElementById('privacyOverlay').addEventListener('click', () => document.getElementById('privacyModal').classList.add('hidden'));
+    document.getElementById('privacyClose').addEventListener('click', () => document.getElementById('privacyModal').classList.add('hidden'));
+  </script>
 
   <script src="js/v2-import.js"></script>
 </body>
