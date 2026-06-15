@@ -14,7 +14,11 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_ROOT = path.join(__dirname, '..', 'data', 'users');
+// DATA_DIR 优先（HF Spaces / 容器持久卷），fallback 到项目内 data/
+const DATA_BASE = process.env.DATA_DIR
+  ? process.env.DATA_DIR
+  : path.join(__dirname, '..', 'data');
+const DATA_ROOT = path.join(DATA_BASE, 'users');
 
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });

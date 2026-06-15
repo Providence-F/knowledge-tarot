@@ -8,7 +8,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const FILE = path.join(__dirname, '..', 'data', 'public-deck.json');
+// DATA_DIR 优先（容器持久卷），fallback 到项目内 data/
+const DATA_BASE = process.env.DATA_DIR
+  ? process.env.DATA_DIR
+  : path.join(__dirname, '..', 'data');
+const FILE = path.join(DATA_BASE, 'public-deck.json');
 
 let cache = null;
 let loadedAt = 0;

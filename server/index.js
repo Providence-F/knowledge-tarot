@@ -11,8 +11,11 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
+// 启动时 seed：HF Spaces 持久卷会盖住容器内的 data/，需要把镜像里的 public-deck.json 拷过去
+require('./seed-public-deck')();
+
 const app = express();
-const PORT = process.env.PORT || 3456;
+const PORT = process.env.PORT || 7860;
 
 // Middleware
 app.use(express.json({ limit: '1mb' }));
