@@ -1,0 +1,25 @@
+{
+  "name": "knowledge-tarot",
+  "version": "1.0.0",
+  "description": "Knowledge Tarot — 把个人知识库当作塔罗牌，通过抽取其中的内容来为自己做解读",
+  "main": "server/index.js",
+  "scripts": {
+    "build-deck": "node scripts/build-deck.js",
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "keywords": [
+    "tarot",
+    "knowledge-base",
+    "obsidian",
+    "self-reflection"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^2.1.1"
+  }
+}

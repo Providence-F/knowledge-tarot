@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knowledge Tarot — 知识塔罗</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tarot: {
+              bg: '#ffffff',
+              card: '#ffffff',
+              gold: '#000000',
+              goldLight: '#333333',
+              ivory: '#1a1a1a',
+              muted: '#888888',
+              border: '#e5e5e5',
+              accent: '#f5f5f5'
+            }
+          },
+          fontFamily: {
+            serif: ['Georgia', 'Noto Serif SC', 'serif'],
+            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-tarot-border">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center">
+          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-black tracking-wide">Knowledge Tarot</h1>
+          <p class="text-xs text-tarot-muted">知识塔罗 — 用过去的智慧指引现在</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="statsBtn" class="text-tarot-muted hover:text-black transition-colors" title="牌组统计">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+
+    <!-- Intro -->
+    <section id="introSection" class="text-center mb-10">
+      <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">你的知识库是一副塔罗牌</h2>
+      <p class="text-tarot-muted max-w-xl mx-auto mb-6">
+        678 张知识卡牌，5 个花色，3 种牌位。<br>
+        抽一张牌，让过去的智慧回应你现在的问题。
+      </p>
+      <div class="flex justify-center gap-6 text-sm text-tarot-muted">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-black/10 border border-black/30"></span>
+          自我之剑 71
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-black/10 border border-black/30"></span>
+          世界之镜 111
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-black/10 border border-black/30"></span>
+          方法之罗盘 212
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-black/10 border border-black/30"></span>
+          行动之舟 192
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-black/10 border border-black/30"></span>
+          成长之种 40
+        </div>
+      </div>
+    </section>
+
+    <!-- Question Input -->
+    <section class="max-w-2xl mx-auto mb-8">
+      <label class="block text-sm text-tarot-muted mb-2">想问点什么？（可选）</label>
+      <div class="relative">
+        <input
+          id="questionInput"
+          type="text"
+          placeholder="留空则随机抽取今日指引牌..."
+          class="w-full bg-white border border-tarot-border rounded-xl px-5 py-4 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors"
+          maxlength="200"
+        >
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tarot-muted" id="charCount">0/200</div>
+      </div>
+    </section>
+
+    <!-- Spread Selection -->
+    <section class="max-w-2xl mx-auto mb-10">
+      <label class="block text-sm text-tarot-muted mb-3">选择牌阵</label>
+      <div class="grid grid-cols-2 gap-4">
+        <button class="spread-btn active" data-spread="single" id="btnSingle">
+          <div class="text-lg font-bold mb-1">日签</div>
+          <div class="text-xs text-tarot-muted">1 张牌 · 每日指引</div>
+        </button>
+        <button class="spread-btn" data-spread="three" id="btnThree">
+          <div class="text-lg font-bold mb-1">三牌阵</div>
+          <div class="text-xs text-tarot-muted">过去 · 现在 · 未来</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Draw Button -->
+    <section class="text-center mb-12">
+      <button id="drawBtn" class="group relative inline-flex items-center gap-3 px-10 py-4 bg-black/5 border border-black/30 rounded-full text-black hover:bg-black/10 transition-all">
+        <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span class="text-lg font-medium">抽牌</span>
+      </button>
+    </section>
+
+    <!-- Spread Area -->
+    <section id="spreadArea" class="mb-10 hidden">
+      <div id="cardsContainer" class="flex flex-wrap justify-center gap-6 md:gap-8"></div>
+    </section>
+
+    <!-- AI Interpretation -->
+    <section id="aiSection" class="max-w-3xl mx-auto mb-10 hidden">
+      <div class="border border-tarot-border rounded-2xl p-6 bg-tarot-card/50">
+        <div class="flex items-center gap-2 mb-4">
+          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          <h3 class="font-bold text-black">AI 解读</h3>
+          <span id="aiSource" class="text-xs text-tarot-muted ml-auto"></span>
+        </div>
+        <div id="aiContent" class="space-y-4 text-sm leading-relaxed"></div>
+        <div id="aiLoading" class="hidden flex items-center gap-3 text-tarot-muted py-4">
+          <div class="w-5 h-5 border-2 border-tarot-gold/30 border-t-tarot-gold rounded-full animate-spin"></div>
+          <span>正在解读你的知识牌阵...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section id="actionsSection" class="flex justify-center gap-4 mb-16 hidden">
+      <button id="exportBtn" class="px-5 py-2.5 rounded-xl border border-tarot-border text-sm hover:border-tarot-gold/50 transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        导出 Markdown
+      </button>
+      <button id="redrawBtn" class="px-5 py-2.5 rounded-xl border border-tarot-border text-sm hover:border-tarot-gold/50 transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        重新抽牌
+      </button>
+    </section>
+
+    <!-- History -->
+    <section id="historySection" class="max-w-3xl mx-auto hidden">
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-black">
+        <svg class="w-5 h-5 text-tarot-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        阅读历史
+      </h3>
+      <div id="historyList" class="space-y-3"></div>
+    </section>
+
+  </main>
+
+  <!-- Card Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="detailOverlay"></div>
+    <div class="absolute inset-x-4 top-10 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[640px] max-h-[85vh] overflow-y-auto bg-tarot-card border border-tarot-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span id="modalSuitBadge" class="px-2 py-0.5 rounded text-xs border"></span>
+          <span id="modalTypeBadge" class="px-2 py-0.5 rounded text-xs bg-tarot-accent text-tarot-muted"></span>
+        </div>
+        <button id="modalClose" class="text-tarot-muted hover:text-tarot-ivory">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <h2 id="modalTitle" class="text-2xl font-serif font-bold text-tarot-gold mb-4"></h2>
+      <div id="modalContent" class="prose prose-invert prose-sm max-w-none text-tarot-ivory/90 leading-relaxed space-y-4"></div>
+      <div id="modalAiExplore" class="hidden"></div>
+      <div class="mt-6 pt-4 border-t border-tarot-border text-xs text-tarot-muted flex justify-between">
+        <span id="modalPath"></span>
+        <span id="modalDate"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div id="statsModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="statsOverlay"></div>
+    <div class="absolute inset-x-4 top-20 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] bg-tarot-card border border-tarot-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-bold text-black">牌组统计</h3>
+        <button id="statsClose" class="text-tarot-muted hover:text-tarot-ivory">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="statsContent" class="space-y-4 text-sm"></div>
+    </div>
+  </div>
+
+  <script src="js/deck.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

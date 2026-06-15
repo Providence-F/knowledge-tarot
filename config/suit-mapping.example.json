@@ -1,0 +1,61 @@
+{
+  "_comment": "复制这个文件为 suit-mapping.json，把 knowledgeBasePath 改成你自己的 Obsidian vault 路径。新版 v2 不依赖此文件（用户通过 Web UI 导入内容），仅旧版 scripts/build-deck.js 用。",
+  "suits": [
+    {
+      "id": "sword-of-self",
+      "name": "自我之剑",
+      "nameEn": "Sword of Self",
+      "directories": ["01-身份"],
+      "theme": "身份/价值观/性格/自我认知",
+      "icon": "⚔"
+    },
+    {
+      "id": "mirror-of-world",
+      "name": "世界之镜",
+      "nameEn": "Mirror of World",
+      "directories": ["02-世界观"],
+      "theme": "外部观察/趋势/社会洞察",
+      "icon": "◯"
+    },
+    {
+      "id": "compass-of-method",
+      "name": "方法之罗盘",
+      "nameEn": "Compass of Method",
+      "directories": ["03-方法论"],
+      "theme": "方法/框架/技能/思维模型",
+      "icon": "✦"
+    },
+    {
+      "id": "ship-of-action",
+      "name": "行动之舟",
+      "nameEn": "Ship of Action",
+      "directories": ["04-项目", "05-学习产出"],
+      "theme": "项目/实践/产出/案例",
+      "icon": "⛵"
+    },
+    {
+      "id": "seed-of-growth",
+      "name": "成长之种",
+      "nameEn": "Seed of Growth",
+      "directories": ["06-成长", "07-日志"],
+      "theme": "成长/反思/感受/日常",
+      "icon": "✿"
+    }
+  ],
+  "cardTypes": [
+    { "pattern": "^洞察[-_ ]", "type": "insight", "label": "洞察牌" },
+    { "pattern": "^方法[-_ ]", "type": "method", "label": "方法牌" },
+    { "pattern": "^概念[-_ ]", "type": "concept", "label": "概念牌" },
+    { "pattern": "^框架[-_ ]", "type": "framework", "label": "框架牌" },
+    { "pattern": "^案例[-_ ]", "type": "case", "label": "案例牌" }
+  ],
+  "arcanaMap": {
+    "mature": "major", "成熟": "major", "published": "major", "evergreen": "major",
+    "growing": "court", "成长中": "court", "draft": "court",
+    "seed": "pip", "种子": "pip", "new": "pip",
+    "active": "court", "done": "major"
+  },
+  "defaultArcana": "pip",
+  "excludeDirs": ["10-归档", ".claude", ".cleanup-backup", ".trash", ".obsidian", ".vscode", ".smart-env", ".search", ".git", ".gitignore", "node_modules"],
+  "knowledgeBasePath": "./your-obsidian-vault-here"
+}

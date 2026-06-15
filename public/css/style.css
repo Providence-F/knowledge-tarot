@@ -1,0 +1,217 @@
+/* ── Theme ─────────────────────────────────────────────── */
+:root {
+  --tarot-bg: #ffffff;
+  --tarot-card: #ffffff;
+  --tarot-gold: #000000;
+  --tarot-gold-light: #333333;
+  --tarot-ivory: #1a1a1a;
+  --tarot-muted: #888888;
+  --tarot-border: #e5e5e5;
+  --tarot-accent: #f5f5f5;
+}
+
+/* ── Base ──────────────────────────────────────────────── */
+body {
+  background: var(--tarot-bg);
+  color: var(--tarot-ivory);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Spread Buttons ────────────────────────────────────── */
+.spread-btn {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--tarot-border);
+  background: var(--tarot-card);
+  color: var(--tarot-ivory);
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.spread-btn:hover {
+  border-color: #000000;
+}
+
+.spread-btn.active {
+  border-color: #000000;
+  background: #f5f5f5;
+}
+
+/* ── Card Flip ─────────────────────────────────────────── */
+.card-wrapper {
+  perspective: 1000px;
+  width: 280px;
+  height: 400px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-wrapper.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--tarot-border);
+  background: var(--tarot-card);
+  overflow: hidden;
+}
+
+.card-back {
+  background: linear-gradient(145deg, #fafafa 0%, #f0f0f0 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.card-back::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 0.75rem;
+  pointer-events: none;
+}
+
+.card-back::after {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: 0.5rem;
+  pointer-events: none;
+}
+
+.card-back-pattern {
+  width: 64px;
+  height: 64px;
+  opacity: 0.3;
+}
+
+.card-front {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+/* ── Suit Colors ───────────────────────────────────────── */
+.suit-sword-of-self    { --suit-color: #000000; --suit-bg: #f5f5f5; }
+.suit-mirror-of-world  { --suit-color: #000000; --suit-bg: #f5f5f5; }
+.suit-compass-of-method{ --suit-color: #000000; --suit-bg: #f5f5f5; }
+.suit-ship-of-action   { --suit-color: #000000; --suit-bg: #f5f5f5; }
+.suit-seed-of-growth   { --suit-color: #000000; --suit-bg: #f5f5f5; }
+
+.card-front.suit-sword-of-self    { border-color: #e5e5e5; }
+.card-front.suit-mirror-of-world  { border-color: #e5e5e5; }
+.card-front.suit-compass-of-method{ border-color: #e5e5e5; }
+.card-front.suit-ship-of-action   { border-color: #e5e5e5; }
+.card-front.suit-seed-of-growth   { border-color: #e5e5e5; }
+
+.suit-badge {
+  color: var(--suit-color);
+  border-color: rgba(255,255,255,0.1);
+  background: var(--suit-bg);
+}
+
+/* ── Arcana Badges ─────────────────────────────────────── */
+.arcana-major { background: #1a1a1a; color: #ffffff; }
+.arcana-court { background: #666666; color: #ffffff; }
+.arcana-pip   { background: #e5e5e5; color: #666666; }
+
+/* ── Animations ────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.card-wrapper.dealing {
+  animation: float 0.6s ease-in-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, var(--tarot-muted) 25%, var(--tarot-ivory) 50%, var(--tarot-muted) 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #999999; }
+
+/* ── Prose overrides ───────────────────────────────────── */
+.prose p { margin-bottom: 0.75rem; }
+.prose strong { color: var(--tarot-gold-light); }
+.prose blockquote {
+  border-left: 2px solid #000000;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--tarot-muted);
+  font-style: italic;
+}
+
+/* ── Reduced Motion ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .card-inner { transition: none; }
+  .card-wrapper.flipped .card-inner { transform: rotateY(180deg); }
+  .card-wrapper.dealing { animation: none; }
+  .shimmer-text { animation: none; }
+}
+
+/* ── Mobile ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .card-wrapper {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    min-height: 380px;
+  }
+  .card-front { padding: 1.25rem; }
+}
+
+/* ── Empty State ───────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--tarot-muted);
+}
+.empty-state svg {
+  margin: 0 auto 1rem;
+  opacity: 0.3;
+}
+
+/* ── Position Label ────────────────────────────────────── */
+.position-label {
+  display: inline-block;
+  background: #000000;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  align-self: flex-start;
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导入内容 — 知识塔罗</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tarot: {
+              bg: '#ffffff', card: '#ffffff', gold: '#000000',
+              ivory: '#1a1a1a', muted: '#888888',
+              border: '#e5e5e5', accent: '#f5f5f5'
+            }
+          },
+          fontFamily: {
+            serif: ['Georgia', 'Noto Serif SC', 'serif'],
+            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-tarot-border">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="v2.html" class="flex items-center gap-3 hover:opacity-70 transition">
+          <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center">
+            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-black tracking-wide">Knowledge Tarot</h1>
+            <p class="text-xs text-tarot-muted">导入内容</p>
+          </div>
+        </a>
+      </div>
+      <a href="v2.html" class="text-sm text-tarot-muted hover:text-black transition-colors flex items-center gap-1">
+        <span>← 返回抽牌</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-12">
+
+    <section class="text-center mb-10">
+      <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">把你写过的内容变成牌</h2>
+      <p class="text-tarot-muted max-w-xl mx-auto">
+        日记、笔记、和 AI 的对话、读书摘抄。<br>
+        AI 会自动帮你切片、分类、生成牌堆。
+      </p>
+      <div class="mt-4 text-xs text-tarot-muted" id="deckSizeHint"></div>
+    </section>
+
+    <!-- 粘贴 -->
+    <section class="mb-8">
+      <label class="block text-sm font-medium mb-3 text-black">
+        ✍ 粘贴一段文字
+      </label>
+      <textarea id="pasteInput" placeholder="把任何你写过的内容贴进来。多段用空行分隔，会被自动切分成多张牌。
+
+比如：日记一段、读书笔记一段、和 AI 聊出来的洞察一段..." class="w-full h-44 p-4 bg-white border border-tarot-border rounded-xl text-sm text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/40 transition-colors resize-none"></textarea>
+      <button id="pasteBtn" class="mt-3 px-6 py-2.5 bg-black/5 border border-black/30 rounded-full text-sm text-black hover:bg-black/10 transition-all">
+        把它变成牌
+      </button>
+    </section>
+
+    <!-- 分隔线 -->
+    <div class="flex items-center gap-4 my-10">
+      <div class="flex-1 border-t border-tarot-border"></div>
+      <span class="text-xs text-tarot-muted">或</span>
+      <div class="flex-1 border-t border-tarot-border"></div>
+    </div>
+
+    <!-- 上传 -->
+    <section class="mb-8">
+      <label class="block text-sm font-medium mb-3 text-black">
+        📎 上传文件
+      </label>
+      <label id="dropZone" class="block border-2 border-dashed border-tarot-border rounded-xl p-10 text-center cursor-pointer hover:border-black/40 transition-colors">
+        <input id="fileInput" type="file" multiple class="hidden">
+        <div class="text-tarot-muted text-sm pointer-events-none">
+          <svg class="w-8 h-8 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <div class="text-base mb-1">点击或拖拽文件到这里</div>
+          <div class="text-xs">.md / .txt 笔记，DeepSeek / ChatGPT 导出 .json，或任意纯文本文件</div>
+          <div class="text-xs mt-2 opacity-60">支持多文件，每个最大 50MB</div>
+        </div>
+      </label>
+      <div id="fileList" class="mt-3 text-xs text-tarot-muted"></div>
+      <button id="uploadBtn" class="mt-3 px-6 py-2.5 bg-black/5 border border-black/30 rounded-full text-sm text-black hover:bg-black/10 transition-all hidden">
+        把它们变成牌
+      </button>
+    </section>
+
+    <!-- 状态条 -->
+    <div id="importStatus" class="mt-6 hidden p-4 rounded-xl text-sm border"></div>
+
+    <!-- 来源支持说明 -->
+    <section class="mt-12 pt-8 border-t border-tarot-border text-xs text-tarot-muted">
+      <div class="font-medium text-tarot-ivory mb-2">支持的来源</div>
+      <ul class="space-y-1.5">
+        <li>· <span class="text-tarot-ivory">Obsidian</span>：导出整个 vault 文件夹（.md 文件）</li>
+        <li>· <span class="text-tarot-ivory">DeepSeek</span>：账号设置 → 数据导出 → conversations.json</li>
+        <li>· <span class="text-tarot-ivory">ChatGPT</span>：Settings → Data Controls → Export → conversations.json</li>
+        <li>· <span class="text-tarot-ivory">flomo / 任意笔记</span>：导出为 .txt 或 .md，或直接复制粘贴</li>
+        <li>· <span class="text-tarot-ivory">日记 / 灵感</span>：直接粘贴，多段会自动分卡</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <script src="js/v2-import.js"></script>
+</body>
+</html>

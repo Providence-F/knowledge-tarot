@@ -1,0 +1,12 @@
+.vercel
+node_modules
+.env
+.env.local
+.env.*.local
+data/users
+data/cards.json
+data/eval-m1-result.json
+data/eval-deepseek-result.json
+config/suit-mapping.json
+*.log
+.DS_Store
