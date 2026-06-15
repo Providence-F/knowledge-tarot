@@ -109,8 +109,9 @@ nginx -t
 systemctl reload nginx
 
 # ── 9. 防火墙 ─────────────────────────────────────────────
-log "开 80 / 443 / 22 端口"
+log "开 22 / 8080 / 80 / 443 端口"
 ufw allow 22/tcp || true
+ufw allow 8080/tcp || true
 ufw allow 80/tcp || true
 ufw allow 443/tcp || true
 yes | ufw enable || true
@@ -126,8 +127,15 @@ cat <<EOF
      sudo nano $ENV_FILE
   2. 重启服务：
      sudo -u $APP_USER pm2 restart knowledge-tarot
-  3. 浏览器访问：
-     http://$PUBLIC_IP
+  3. 浏览器访问（注意带 :8080 端口号）：
+     http://$PUBLIC_IP:8080
+
+  ⚠️ 国内地域(沪/京/穗)使用 8080 端口绕过 ICP 备案要求。
+     如果以后绑域名+HTTPS，需要先做 ICP 备案才能用 80/443。
+
+  ⚠️ 腾讯云控制台还要单独开放 8080 端口！
+     轻量服务器 → 实例 → 防火墙 → 添加规则 →
+     应用类型「自定义」TCP 8080 全部 IP 允许
 
 常用命令：
   pm2 logs knowledge-tarot       # 看日志
