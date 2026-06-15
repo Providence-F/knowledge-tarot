@@ -34,7 +34,13 @@ const router = express.Router();
 router.use(cookieParser());
 
 // ── User middleware：自动签发 anonymous ID ────────────────
-const COOKIE_SECURE = process.env.NODE_ENV === 'production';
+// COOKIE_SECURE 取决于请求实际是否 HTTPS（兼容 HTTP IP 直访 + 反代后的 HTTPS）
+function isSecureRequest(req) {
+  if (req.secure) return true;
+  const xfp = req.headers['x-forwarded-proto'];
+  if (typeof xfp === 'string' && xfp.split(',')[0].trim() === 'https') return true;
+  return false;
+}
 router.use((req, res, next) => {
   let uid = req.cookies?.kt_uid;
   if (!uid || !/^[a-f0-9]{32}$/.test(uid)) {
@@ -42,7 +48,7 @@ router.use((req, res, next) => {
     res.cookie('kt_uid', uid, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: COOKIE_SECURE,
+      secure: isSecureRequest(req),
       maxAge: 365 * 86400000  // 1 年
     });
   }
@@ -432,7 +438,7 @@ router.post('/me/import', express.json(), (req, res) => {
   res.cookie('kt_uid', target, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: COOKIE_SECURE,
+    secure: isSecureRequest(req),
     maxAge: 365 * 86400000
   });
   res.json({ ok: true, userId: target });
