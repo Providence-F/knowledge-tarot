@@ -34,6 +34,7 @@ const router = express.Router();
 router.use(cookieParser());
 
 // ── User middleware：自动签发 anonymous ID ────────────────
+const COOKIE_SECURE = process.env.NODE_ENV === 'production';
 router.use((req, res, next) => {
   let uid = req.cookies?.kt_uid;
   if (!uid || !/^[a-f0-9]{32}$/.test(uid)) {
@@ -41,6 +42,7 @@ router.use((req, res, next) => {
     res.cookie('kt_uid', uid, {
       httpOnly: true,
       sameSite: 'lax',
+      secure: COOKIE_SECURE,
       maxAge: 365 * 86400000  // 1 年
     });
   }
@@ -117,6 +119,7 @@ router.post('/import/text', express.json({ limit: '10mb' }), async (req, res) =>
 });
 
 // ── /api/v2/import/files ─────────────────────────────────
+const MAX_TOTAL_UPLOAD = 100 * 1024 * 1024; // 100MB 总和
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024, files: 50 }
@@ -125,6 +128,12 @@ const upload = multer({
 router.post('/import/files', upload.array('files', 50), async (req, res) => {
   const files = req.files || [];
   if (files.length === 0) return res.status(400).json({ error: 'No files uploaded' });
+
+  // 累计总大小检查
+  const totalBytes = files.reduce((s, f) => s + (f.size || 0), 0);
+  if (totalBytes > MAX_TOTAL_UPLOAD) {
+    return res.status(413).json({ error: `所有文件总大小超出 ${MAX_TOTAL_UPLOAD / 1024 / 1024}MB 限制` });
+  }
 
   try {
     const items = [];
@@ -216,10 +225,16 @@ router.get('/deck', (req, res) => {
 
 // 单张牌完整内容（深度探索时拉取）
 router.get('/deck/card/:id', (req, res) => {
-  // 先查私牌堆，再 fallback 到公共牌堆（让两边的 id 都能解析）
+  const profile = storage.getOrCreateUser(req.userId);
+  const isPublicMode = profile.mode === 'public';
   const deck = storage.getDeck(req.userId);
-  let card = deck.cards.find(c => c.id === req.params.id);
-  if (!card) card = publicDeck.getCardById(req.params.id);
+  // public 模式只允许读 public 牌；private 模式可读自己 + public（fallback）
+  let card = null;
+  if (isPublicMode) {
+    card = publicDeck.getCardById(req.params.id);
+  } else {
+    card = deck.cards.find(c => c.id === req.params.id) || publicDeck.getCardById(req.params.id);
+  }
   if (!card) return res.status(404).json({ error: 'Card not found' });
   res.json(card);
 });
@@ -295,24 +310,51 @@ router.post('/draw/three', express.json(), async (req, res) => {
 });
 
 // ── /api/v2/dialogue/turn ────────────────────────────────
-router.post('/dialogue/turn', express.json(), async (req, res) => {
+const MAX_TRANSCRIPT_ENTRIES = 50;
+const MAX_TRANSCRIPT_TEXT_LEN = 2000;
+const MAX_USER_QUESTION_LEN = 500;
+
+function validateTranscript(transcript) {
+  if (!Array.isArray(transcript)) return { ok: false, error: 'transcript must be array' };
+  if (transcript.length > MAX_TRANSCRIPT_ENTRIES) return { ok: false, error: `transcript too long (max ${MAX_TRANSCRIPT_ENTRIES})` };
+  for (const t of transcript) {
+    if (!t || typeof t !== 'object') return { ok: false, error: 'invalid transcript entry' };
+    if (t.role !== 'user' && t.role !== 'ai') return { ok: false, error: 'role must be "user" or "ai"' };
+    if (typeof t.text !== 'string') return { ok: false, error: 'text must be string' };
+    if (t.text.length > MAX_TRANSCRIPT_TEXT_LEN) return { ok: false, error: `transcript text too long (max ${MAX_TRANSCRIPT_TEXT_LEN})` };
+  }
+  return { ok: true };
+}
+
+router.post('/dialogue/turn', express.json({ limit: '256kb' }), async (req, res) => {
   const { cardId, cardIds, dialogueId, transcript = [], userQuestion = '' } = req.body || {};
   const ids = Array.isArray(cardIds) && cardIds.length > 0
     ? cardIds
     : (cardId ? [cardId] : []);
   if (ids.length === 0) return res.status(400).json({ error: 'cardId or cardIds required' });
+  if (ids.length > 5) return res.status(400).json({ error: 'too many cards (max 5)' });
+  if (typeof userQuestion !== 'string' || userQuestion.length > MAX_USER_QUESTION_LEN) {
+    return res.status(400).json({ error: `userQuestion too long (max ${MAX_USER_QUESTION_LEN})` });
+  }
+  const v = validateTranscript(transcript);
+  if (!v.ok) return res.status(400).json({ error: v.error });
 
   const profile = storage.getOrCreateUser(req.userId);
   const isPublic = profile.mode === 'public';
 
-  // 私牌堆找不到时 fallback 到公共牌堆，反过来同理（id 唯一即可命中）
+  // owner 校验：每个 cardId 必须属于当前用户的牌堆 OR public 牌堆
   const personalDeck = storage.getDeck(req.userId);
-  const cards = ids.map(id => {
-    return personalDeck.cards.find(c => c.id === id)
-      || publicDeck.getCardById(id)
-      || null;
-  }).filter(Boolean);
-  if (cards.length === 0) return res.status(404).json({ error: 'Cards not found' });
+  const cards = [];
+  for (const id of ids) {
+    let c = null;
+    if (isPublic) {
+      c = publicDeck.getCardById(id); // public 模式只能用 public 牌
+    } else {
+      c = personalDeck.cards.find(x => x.id === id) || publicDeck.getCardById(id);
+    }
+    if (!c) return res.status(403).json({ error: 'Card not accessible' });
+    cards.push(c);
+  }
 
   const style = profile.style || 'gentle';
   const question = await ai.dialogueTurn(cards, transcript, style, userQuestion);
@@ -390,6 +432,7 @@ router.post('/me/import', express.json(), (req, res) => {
   res.cookie('kt_uid', target, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: COOKIE_SECURE,
     maxAge: 365 * 86400000
   });
   res.json({ ok: true, userId: target });

@@ -185,6 +185,7 @@
           <a href="v2-library.html" class="block text-center px-3 py-2.5 border border-tarot-border rounded-lg text-sm text-black hover:bg-tarot-accent transition min-h-[44px] flex items-center justify-center">我的牌库</a>
           <a href="v2-import.html" class="block text-center px-3 py-2.5 border border-tarot-border rounded-lg text-sm text-black hover:bg-tarot-accent transition min-h-[44px] flex items-center justify-center">导入内容</a>
         </div>
+        <button id="switchModeBtn" class="hidden w-full px-3 py-2.5 border border-tarot-border rounded-lg text-xs text-tarot-muted hover:bg-tarot-accent transition min-h-[44px]"></button>
       </div>
     </div>
   </header>
@@ -222,7 +223,7 @@
         <label class="block text-sm text-tarot-muted mb-2">想问点什么？（可选）</label>
         <div class="relative">
           <input id="questionInput" type="text" placeholder="留空则随机抽取..." maxlength="200"
-            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-4 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
+            class="w-full bg-white border border-tarot-border rounded-xl pl-5 pr-20 py-4 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
           <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tarot-muted" id="charCount">0/200</div>
         </div>
       </section>
@@ -316,7 +317,7 @@
   <!-- 深度对话 modal（保留极简风格） -->
   <div id="dialogueModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="dialogueOverlay"></div>
-    <div class="absolute inset-x-4 top-10 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[640px] max-h-[85vh] bg-white border border-tarot-border rounded-2xl shadow-xl flex flex-col overflow-hidden">
+    <div class="absolute inset-x-3 top-[5vh] bottom-[5vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[8vh] md:bottom-[8vh] md:w-[640px] bg-white border border-tarot-border rounded-2xl shadow-xl flex flex-col overflow-hidden">
       <div class="px-6 py-4 border-b border-tarot-border flex items-center justify-between">
         <div>
           <div class="text-xs text-tarot-muted" id="dialogueCardSuit"></div>

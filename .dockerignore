@@ -1,0 +1,17 @@
+node_modules
+.git
+.gitignore
+.vercel
+vercel.json
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+data/users
+data/eval-*.json
+data/cards.json
+.claude
+*.md
+!README.md
+public/snapshot/

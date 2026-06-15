@@ -78,21 +78,23 @@
       </div>
 
       <!-- Filter bar -->
-      <div class="flex flex-wrap items-center gap-2 mb-4">
-        <div class="flex items-center gap-1 mr-2" id="typeFilter">
+      <div class="filter-bar mb-4">
+        <div class="filter-chips" id="typeFilter">
           <button class="chip active" data-filter="all">全部</button>
           <button class="chip" data-filter="reflection">反思</button>
           <button class="chip" data-filter="opinion">观点</button>
           <button class="chip" data-filter="analysis">洞察</button>
         </div>
-        <input id="deckSearch" type="text" placeholder="搜索标题或正文..." class="flex-1 min-w-[200px] px-3 py-2 border border-tarot-border rounded-lg text-sm focus:outline-none focus:border-black/40">
-        <select id="deckSort" class="px-3 py-2 border border-tarot-border rounded-lg text-sm bg-white focus:outline-none focus:border-black/40">
-          <option value="newest">最新优先</option>
-          <option value="oldest">最早优先</option>
-          <option value="title">标题排序</option>
-          <option value="type">按类型分组</option>
-        </select>
-        <button id="clearDeckBtn" class="px-3 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">清空牌堆</button>
+        <div class="filter-controls">
+          <input id="deckSearch" type="text" placeholder="搜索标题或正文..." class="flex-1 min-w-0 px-3 py-2 border border-tarot-border rounded-lg text-sm focus:outline-none focus:border-black/40">
+          <select id="deckSort" class="px-3 py-2 border border-tarot-border rounded-lg text-sm bg-white focus:outline-none focus:border-black/40">
+            <option value="newest">最新优先</option>
+            <option value="oldest">最早优先</option>
+            <option value="title">标题排序</option>
+            <option value="type">按类型分组</option>
+          </select>
+          <button id="clearDeckBtn" class="px-3 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition whitespace-nowrap">清空牌堆</button>
+        </div>
       </div>
 
       <div id="deckMeta" class="text-xs text-tarot-muted mb-3"></div>
@@ -205,6 +207,23 @@
       letter-spacing: .02em;
     }
 
+    /* Filter bar */
+    .filter-bar { display: flex; flex-direction: column; gap: 10px; }
+    .filter-chips {
+      display: flex; gap: 6px; align-items: center;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .filter-controls { display: flex; gap: 8px; align-items: center; }
+    @media (min-width: 768px) {
+      .filter-bar { flex-direction: row; align-items: center; gap: 8px; }
+      .filter-chips { flex-shrink: 0; overflow: visible; padding-bottom: 0; }
+      .filter-controls { flex: 1; }
+    }
+
     /* Chip filter */
     .chip {
       padding: 6px 14px;
@@ -215,6 +234,7 @@
       background: #fff;
       transition: all .15s;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .chip:hover { color: #000; border-color: #999; }
     .chip.active { color: #fff; background: #000; border-color: #000; }
@@ -291,12 +311,21 @@
     .card-tile .tile-del {
       opacity: 0;
       color: #cc0000;
-      padding: 2px 6px;
+      padding: 4px 8px;
       border-radius: 4px;
       transition: all .15s;
+      min-width: 28px;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .card-tile:hover .tile-del { opacity: 1; }
     .card-tile .tile-del:hover { background: #fef2f2; }
+    @media (hover: none) {
+      .card-tile .tile-del { opacity: .55; }
+      .card-tile .tile-del:active { opacity: 1; background: #fef2f2; }
+    }
 
     /* Group header for "by type" sort */
     .group-header {

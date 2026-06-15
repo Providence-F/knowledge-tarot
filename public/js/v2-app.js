@@ -71,6 +71,19 @@
           wrap.classList.add('flex');
         }
       }
+      // 模式切换按钮
+      const switchBtn = $('switchModeBtn');
+      if (switchBtn) {
+        if (state.user?.mode === 'public') {
+          switchBtn.textContent = '切换到我的牌堆 →';
+          switchBtn.classList.remove('hidden');
+        } else if (state.user?.mode === 'private' && state.publicDeck.available) {
+          switchBtn.textContent = '体验公共牌堆 (DEMO) →';
+          switchBtn.classList.remove('hidden');
+        } else {
+          switchBtn.classList.add('hidden');
+        }
+      }
       // 公共牌堆描述
       if (state.publicDeck.available) {
         const sizeEl = $('onbPublicSize');
@@ -119,6 +132,32 @@
       navToggle.addEventListener('click', () => navMenu.classList.toggle('hidden'));
     }
 
+    // 顶栏菜单内"模式切换"
+    const switchModeBtn = $('switchModeBtn');
+    if (switchModeBtn) {
+      switchModeBtn.addEventListener('click', async () => {
+        const target = state.user?.mode === 'public' ? 'private' : 'public';
+        if (target === 'public' && !state.publicDeck.available) {
+          alert('公共牌堆暂未就绪');
+          return;
+        }
+        if (!confirm(target === 'private' ? '切换到你自己的牌堆？' : '切换到公共牌堆 (DEMO 模式，抽牌不会保存)？')) return;
+        try {
+          const r = await fetch('/api/v2/me/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: target })
+          });
+          if (!r.ok) throw new Error('切换失败');
+          if (target === 'private' && state.deckSize === 0) {
+            window.location.href = 'v2-import.html';
+          } else {
+            location.reload();
+          }
+        } catch { alert('切换失败，请刷新重试'); }
+      });
+    }
+
     document.querySelectorAll('.spread-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.spread-btn').forEach(b => b.classList.remove('active'));
@@ -131,6 +170,7 @@
       $('charCount').textContent = e.target.value.length + '/200';
     });
     $('questionInput').addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') handleDraw();
     });
 
@@ -149,7 +189,11 @@
     $('dialogueClose').addEventListener('click', closeDialogue);
     $('dialogueSend').addEventListener('click', sendDialogue);
     $('dialogueInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendDialogue();
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendDialogue();
+      }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -266,9 +310,17 @@
   }
 
   function renderCards(cards) {
-    const container = $('cardsContainer');
-    container.innerHTML = '';
+    const list = $('cardsContainer');
+    list.innerHTML = '';
     cards.forEach((card, idx) => {
+      const slot = document.createElement('div');
+      slot.className = 'flex flex-col items-center';
+      if (card.positionName) {
+        const label = document.createElement('div');
+        label.className = 'position-outer-label';
+        label.textContent = card.positionName;
+        slot.appendChild(label);
+      }
       const wrapper = document.createElement('div');
       wrapper.className = 'card-wrapper cursor-pointer';
       wrapper.dataset.cardId = card.id;
@@ -296,7 +348,8 @@
           </div>
         </div>
       `;
-      container.appendChild(wrapper);
+      slot.appendChild(wrapper);
+      list.appendChild(slot);
 
       setTimeout(() => wrapper.classList.add('flipped'), 200 + idx * 300);
 
@@ -447,10 +500,12 @@
 
   // ── 深度对话（全局，针对当前抽出的所有牌） ──────────
   let dialogueState = { cards: [], dialogueId: null, transcript: [], userQuestion: '' };
+  let dialogueAbortController = null;
 
   function openGlobalDialogue() {
     const cards = state.currentCards || [];
     if (cards.length === 0) return;
+    if (dialogueAbortController) { dialogueAbortController.abort(); dialogueAbortController = null; }
     dialogueState = {
       cards,
       dialogueId: null,
@@ -479,10 +534,14 @@
   }
 
   function closeDialogue() {
+    if (dialogueAbortController) { dialogueAbortController.abort(); dialogueAbortController = null; }
     $('dialogueModal').classList.add('hidden');
   }
 
   async function aiAsk() {
+    if (dialogueAbortController) { dialogueAbortController.abort(); }
+    const ctl = new AbortController();
+    dialogueAbortController = ctl;
     appendDialogue('ai', '...', true);
     try {
       const r = await fetch('/api/v2/dialogue/turn', {
@@ -493,8 +552,10 @@
           dialogueId: dialogueState.dialogueId,
           transcript: dialogueState.transcript,
           userQuestion: dialogueState.userQuestion
-        })
+        }),
+        signal: ctl.signal
       });
+      if (ctl.signal.aborted) return;
       const data = await r.json();
       removeLoading();
       if (!r.ok) throw new Error(data.error || '对话失败');
@@ -502,9 +563,26 @@
       if (data.dialogueId) dialogueState.dialogueId = data.dialogueId;
       dialogueState.transcript.push({ role: 'ai', text: q });
       appendDialogue('ai', q);
-    } catch {
+    } catch (e) {
+      if (e.name === 'AbortError') return;
       removeLoading();
-      appendDialogue('ai', '（AI 暂时没接上）');
+      // 不把失败的"AI 问题"写进 transcript（避免污染上下文）
+      const node = document.createElement('div');
+      node.className = 'flex justify-start';
+      node.innerHTML = `
+        <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed bg-red-50 border border-red-200 text-red-700 flex items-center gap-3">
+          <span>（AI 暂时没接上）</span>
+          <button class="px-2 py-0.5 text-xs border border-red-300 rounded hover:bg-red-100 transition" data-action="retry-ai">重试</button>
+        </div>
+      `;
+      $('dialogueScroll').appendChild(node);
+      $('dialogueScroll').scrollTop = $('dialogueScroll').scrollHeight;
+      node.querySelector('[data-action="retry-ai"]').addEventListener('click', () => {
+        node.remove();
+        aiAsk();
+      });
+    } finally {
+      if (dialogueAbortController === ctl) dialogueAbortController = null;
     }
   }
 

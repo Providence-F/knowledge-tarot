@@ -5,8 +5,12 @@
   "main": "server/index.js",
   "scripts": {
     "build-deck": "node scripts/build-deck.js",
+    "build-public-deck": "node scripts/build-public-deck.js",
     "start": "node server/index.js",
     "dev": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [
     "tarot",
