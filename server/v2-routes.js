@@ -186,11 +186,15 @@ router.post('/me/mode', express.json(), (req, res) => {
 // ── Decks CRUD ──────────────────────────────────────────
 router.get('/decks', (req, res) => {
   const profile = storage.getOrCreateUser(req.userId);
-  const owned = storage.listDecks(req.userId);
+  const effectiveActiveDeckId = profile.activeDeckId || (publicDeck.isReady() ? SYSTEM_DEFAULT_ID : null);
+  const owned = storage.listDecks(req.userId).map(d => ({
+    ...d,
+    isActive: d.id === effectiveActiveDeckId
+  }));
   const seeds = seedDecks.listSeedDecks().map(s => ({
     ...s,
     isSeed: true,
-    isActive: profile.activeDeckId === s.id
+    isActive: effectiveActiveDeckId === s.id
   }));
   const sysDefault = publicDeck.isReady() ? [{
     id: SYSTEM_DEFAULT_ID,
@@ -199,13 +203,13 @@ router.get('/decks', (req, res) => {
     emoji: '🌌',
     totalCards: publicDeck.getMeta().totalCards || 0,
     isSystem: true,
-    isActive: profile.activeDeckId === SYSTEM_DEFAULT_ID
+    isActive: effectiveActiveDeckId === SYSTEM_DEFAULT_ID
   }] : [];
   res.json({
     owned,
     seeds,
     system: sysDefault,
-    activeDeckId: profile.activeDeckId
+    activeDeckId: effectiveActiveDeckId
   });
 });
 

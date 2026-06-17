@@ -6,14 +6,21 @@
 
   const $ = (id) => document.getElementById(id);
 
-  let state = { deck: [], history: [], dialogues: [], userId: '', filter: 'all', sort: 'newest' };
+  let state = {
+    deck: [],
+    decksList: { owned: [], seeds: [], system: [], activeDeckId: null },
+    history: [],
+    dialogues: [],
+    userId: '',
+    sort: 'newest'
+  };
 
   document.addEventListener('DOMContentLoaded', init);
 
   async function init() {
     bindEvents();
-    await Promise.all([loadDeck(), loadHistory(), loadDialogues(), loadAccount()]);
-    switchTab('deck');
+    await Promise.all([loadDecksList(), loadDeck(), loadHistory(), loadDialogues(), loadAccount()]);
+    switchTab('decks');
   }
 
   function bindEvents() {
@@ -38,15 +45,6 @@
       state.sort = e.target.value;
       renderDeck();
     });
-    document.querySelectorAll('#typeFilter .chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('#typeFilter .chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        state.filter = chip.dataset.filter;
-        renderDeck();
-      });
-    });
-
     // card detail modal
     $('cardModalOverlay').addEventListener('click', closeCardModal);
     $('cardModalClose').addEventListener('click', closeCardModal);
@@ -91,28 +89,170 @@
         alert('当前是只读牌堆（系统兜底或示范牌堆），不能分享。请切到自己的牌堆后再试。');
         return;
       }
-      const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}'
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        alert('生成分享链接失败：' + (data.error || r.status));
-        return;
-      }
-      const data = await r.json();
-      const fullUrl = location.origin + data.shareUrl;
-      $('libShareUrl').value = fullUrl;
-      $('libShareModal').classList.remove('hidden');
+      await shareDeck(deckId);
     } catch (e) {
       alert('网络错误：' + e.message);
     }
   }
 
+  async function shareDeck(deckId) {
+    const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      alert('生成分享链接失败：' + (data.error || r.status));
+      return;
+    }
+    const data = await r.json();
+    $('libShareUrl').value = location.origin + data.shareUrl;
+    $('libShareModal').classList.remove('hidden');
+  }
+
   function switchTab(name) {
     document.querySelectorAll('.lib-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.lib-pane').forEach(p => p.classList.toggle('hidden', p.id !== `tab-${name}`));
+  }
+
+  // ── Decks manager ──────────────────────────────────
+  async function loadDecksList() {
+    try {
+      const r = await fetch('/api/v2/decks');
+      const data = await r.json();
+      state.decksList = {
+        owned: data.owned || [],
+        seeds: data.seeds || [],
+        system: data.system || [],
+        activeDeckId: data.activeDeckId || null
+      };
+      renderDecksManager();
+      renderDeckStats();
+      refreshBadges();
+    } catch (e) { console.error(e); }
+  }
+
+  function renderDecksManager() {
+    const root = $('decksManager');
+    const { owned = [], seeds = [], system = [] } = state.decksList;
+    const parts = [];
+
+    parts.push(renderManagedDeckSection('我的牌堆', owned, 'owned'));
+    parts.push(renderManagedDeckSection('系统兜底', system, 'system'));
+    parts.push(renderManagedDeckSection('示范牌堆 · 可克隆', seeds, 'seed'));
+
+    root.innerHTML = parts.join('');
+    bindDeckManagerActions(root);
+  }
+
+  function renderManagedDeckSection(title, decks, kind) {
+    if (kind === 'owned' && decks.length === 0) {
+      return `
+        <section>
+          <div class="deck-manager-section-title">${title}</div>
+          <div class="p-5 border border-dashed border-tarot-border rounded-xl text-sm text-tarot-muted bg-white">
+            <p class="mb-3">你还没有自己的牌堆。可以从示范牌堆克隆，或导入内容新建。</p>
+            <a href="v2-import.html" class="inline-flex px-3 py-2 text-xs bg-black text-white rounded-lg hover:bg-tarot-ivory transition">+ 新建 / 导入牌堆</a>
+          </div>
+        </section>
+      `;
+    }
+    if (!decks.length) return '';
+    return `
+      <section>
+        <div class="deck-manager-section-title">${title}</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          ${decks.map(d => renderManagedDeckCard(d, kind)).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderManagedDeckCard(deck, kind) {
+    const isActive = deck.id === state.decksList.activeDeckId || deck.isActive;
+    const desc = deck.description ? escapeHtml(deck.description) : '没有描述';
+    const count = deck.totalCards || deck.cardsCount || 0;
+    let actions = '';
+    if (kind === 'owned') {
+      actions = `
+        ${isActive ? '' : `<button class="managed-deck-action" data-action="activate-deck" data-deck-id="${escapeAttr(deck.id)}">使用</button>`}
+        <button class="managed-deck-action" data-action="share-deck" data-deck-id="${escapeAttr(deck.id)}">分享</button>
+        <button class="managed-deck-action danger" data-action="delete-deck" data-deck-id="${escapeAttr(deck.id)}">删除</button>
+      `;
+    } else if (kind === 'system') {
+      actions = isActive ? '' : `<button class="managed-deck-action" data-action="activate-deck" data-deck-id="${escapeAttr(deck.id)}">使用</button>`;
+    } else if (kind === 'seed') {
+      actions = `<button class="managed-deck-action" data-action="clone-seed" data-deck-id="${escapeAttr(deck.id)}">克隆并使用</button>`;
+    }
+    return `
+      <article class="managed-deck-card ${isActive ? 'is-active' : ''}" data-kind="${kind}" data-deck-id="${escapeAttr(deck.id)}">
+        <div class="managed-deck-emoji">${escapeHtml(deck.emoji || '📚')}</div>
+        <div class="managed-deck-body">
+          <div class="managed-deck-title">
+            <span>${escapeHtml(deck.name || '未命名牌堆')}</span>
+            ${isActive ? '<span class="managed-deck-badge">当前使用</span>' : ''}
+          </div>
+          <div class="managed-deck-desc">${count} 张 · ${desc}</div>
+          <div class="managed-deck-actions">${actions}</div>
+        </div>
+      </article>
+    `;
+  }
+
+  function bindDeckManagerActions(root) {
+    root.querySelectorAll('[data-action="activate-deck"]').forEach(btn => {
+      btn.addEventListener('click', async () => activateDeck(btn.dataset.deckId));
+    });
+    root.querySelectorAll('[data-action="clone-seed"]').forEach(btn => {
+      btn.addEventListener('click', async () => cloneSeedDeck(btn.dataset.deckId));
+    });
+    root.querySelectorAll('[data-action="share-deck"]').forEach(btn => {
+      btn.addEventListener('click', async () => shareDeck(btn.dataset.deckId));
+    });
+    root.querySelectorAll('[data-action="delete-deck"]').forEach(btn => {
+      btn.addEventListener('click', async () => deleteDeck(btn.dataset.deckId));
+    });
+  }
+
+  async function activateDeck(deckId) {
+    const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}/activate`, { method: 'POST' });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      alert('切换失败：' + (data.error || r.status));
+      return;
+    }
+    await Promise.all([loadDecksList(), loadDeck()]);
+  }
+
+  async function cloneSeedDeck(seedId) {
+    const seed = state.decksList.seeds.find(d => d.id === seedId);
+    if (!confirm(`将「${seed?.name || '示范牌堆'}」克隆为我的牌堆并使用？`)) return;
+    const r = await fetch(`/api/v2/seed-decks/${encodeURIComponent(seedId)}/clone`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert('克隆失败：' + (data.error || r.status));
+      return;
+    }
+    await fetch(`/api/v2/decks/${encodeURIComponent(data.deckId)}/activate`, { method: 'POST' });
+    await Promise.all([loadDecksList(), loadDeck()]);
+  }
+
+  async function deleteDeck(deckId) {
+    const deck = state.decksList.owned.find(d => d.id === deckId);
+    if (!deck) return;
+    const isActive = deck.id === state.decksList.activeDeckId || deck.isActive;
+    const msg = isActive
+      ? `删除当前正在使用的牌堆「${deck.name || '未命名'}」？\n删除后会自动切换到其他可用牌堆或系统兜底。\n\n这会删除 ${deck.totalCards || 0} 张牌，无法恢复。抽牌历史不会自动删除。`
+      : `删除「${deck.name || '未命名'}」？\n这会删除这副牌堆中的 ${deck.totalCards || 0} 张牌，无法恢复。抽牌历史不会自动删除。`;
+    if (!confirm(msg)) return;
+    const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}`, { method: 'DELETE' });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert('删除失败：' + (data.error || r.status));
+      return;
+    }
+    await Promise.all([loadDecksList(), loadDeck()]);
   }
 
   // ── Deck ───────────────────────────────────────────
@@ -128,24 +268,19 @@
   }
 
   function renderDeckStats() {
-    const counts = { reflection: 0, opinion: 0, analysis: 0, other: 0 };
-    state.deck.forEach(c => {
-      const t = c.contentType in counts ? c.contentType : 'other';
-      counts[t]++;
-    });
     $('statTotal').textContent = state.deck.length;
-    $('statReflection').textContent = counts.reflection;
-    $('statOpinion').textContent = counts.opinion;
-    $('statAnalysis').textContent = counts.analysis;
+    const activeDeck = [
+      ...(state.decksList.owned || []),
+      ...(state.decksList.system || []),
+      ...(state.decksList.seeds || [])
+    ].find(d => d.id === state.decksList.activeDeckId || d.isActive);
+    $('statActiveDeck').textContent = activeDeck?.name || '—';
   }
 
   function renderDeck() {
     const q = ($('deckSearch').value || '').trim().toLowerCase();
     let filtered = state.deck;
 
-    if (state.filter !== 'all') {
-      filtered = filtered.filter(c => c.contentType === state.filter);
-    }
     if (q) {
       filtered = filtered.filter(c =>
         (c.title || '').toLowerCase().includes(q) ||
@@ -160,16 +295,10 @@
     if (state.sort === 'newest') sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     else if (state.sort === 'oldest') sorted.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
     else if (state.sort === 'title') sorted.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-CN'));
-    else if (state.sort === 'type') {
-      const order = { reflection: 0, opinion: 1, analysis: 2, other: 3 };
-      sorted.sort((a, b) =>
-        (order[a.contentType] ?? 4) - (order[b.contentType] ?? 4)
-        || (b.createdAt || 0) - (a.createdAt || 0)
-      );
-    }
 
     // Meta line
     $('deckMeta').textContent = `${sorted.length} / ${state.deck.length} 张`;
+    $('statVisible').textContent = sorted.length;
 
     const list = $('deckList');
     if (sorted.length === 0) {
@@ -177,23 +306,13 @@
       return;
     }
 
-    // Build HTML — group headers if sort=type
     const html = [];
-    let lastType = null;
     sorted.forEach(c => {
-      if (state.sort === 'type') {
-        const t = c.contentType || 'other';
-        if (t !== lastType) {
-          html.push(`<div class="group-header">${contentTypeLabel(t)} · ${sorted.filter(x => (x.contentType || 'other') === t).length} 张</div>`);
-          lastType = t;
-        }
-      }
-      const t = c.contentType || 'other';
       const snippet = c.summary || c.passage || '';
       html.push(`
         <div class="card-tile" data-id="${escapeAttr(c.id)}">
           <div class="tile-head">
-            <span class="type-badge t-${escapeAttr(t)}">${contentTypeLabel(t)}</span>
+            <span></span>
             <button class="tile-del" data-action="del-card" data-id="${escapeAttr(c.id)}" title="删除">✕</button>
           </div>
           <h4>${escapeHtml(c.title || '—')}</h4>
@@ -239,7 +358,7 @@
     const lite = list.find(c => c.id === id);
     if (!lite) return;
 
-    $('cardModalMeta').textContent = [lite.suitName, contentTypeLabel(lite.contentType)].filter(Boolean).join(' · ');
+    $('cardModalMeta').textContent = [lite.suitName].filter(Boolean).join(' · ');
     $('cardModalTitle').textContent = lite.title || '—';
     $('cardModalBody').innerHTML = '<p class="text-tarot-muted text-sm">加载完整内容…</p>';
     $('cardModalCount').textContent = '';
@@ -269,7 +388,7 @@
       parts.push(`<p class="lead">${escapeHtml(card.summary)}</p>`);
     }
     if (card.contentType === 'analysis' && Array.isArray(card.insights) && card.insights.length) {
-      parts.push(`<span class="section-label">洞察</span>`);
+      parts.push(`<span class="section-label">要点</span>`);
       parts.push(card.insights.map(s => `<div class="insight-card">${escapeHtml(s)}</div>`).join(''));
     }
     if (fullText && fullText.trim()) {
@@ -463,15 +582,13 @@
   }
 
   function refreshBadges() {
+    $('badgeDecks').textContent = state.decksList.owned.length || '';
     $('badgeDeck').textContent = state.deck.length || '';
     $('badgeHistory').textContent = state.history.length || '';
     $('badgeDialogues').textContent = state.dialogues.length || '';
   }
 
   // ── utils ──────────────────────────────────────────
-  function contentTypeLabel(t) {
-    return ({ reflection: '反思', opinion: '观点', analysis: '洞察' })[t] || '其他';
-  }
   function formatDate(ts) {
     if (!ts) return '—';
     const d = new Date(ts);

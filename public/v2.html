@@ -220,20 +220,25 @@
     <section id="drawSection" class="hidden">
       <!-- Intro -->
       <section id="introSection" class="text-center mb-10">
-        <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">抽一张牌</h2>
+        <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">带着一个问题抽牌</h2>
         <p class="text-tarot-muted max-w-xl mx-auto">
-          深呼吸三次，把你的问题想清楚。<br>
-          也可以什么都不想，直接抽。
+          问得越具体，牌越容易击中你。<br>
+          如果只是想听一句提醒，也可以留空。
         </p>
       </section>
 
       <!-- Question Input -->
       <section class="max-w-2xl mx-auto mb-8">
-        <label class="block text-sm text-tarot-muted mb-2">想问点什么？（可选）</label>
+        <label class="block text-sm text-tarot-muted mb-2">你现在真正想问的是什么？（可选）</label>
         <div class="relative">
-          <input id="questionInput" type="text" placeholder="留空则随机抽取..." maxlength="200"
+          <input id="questionInput" type="text" placeholder="例如：我该不该继续做这个项目？" maxlength="200"
             class="w-full bg-white border border-tarot-border rounded-xl pl-5 pr-20 py-4 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
           <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tarot-muted" id="charCount">0/200</div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我现在卡住的点是什么？</button>
+          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">这段关系真正的问题是什么？</button>
+          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我该把注意力放在哪里？</button>
         </div>
       </section>
 
@@ -264,6 +269,8 @@
 
       <!-- Cards Display -->
       <section id="cardsArea" class="mb-10 hidden">
+        <div id="drawContext" class="max-w-2xl mx-auto mb-6 text-center hidden"></div>
+        <div id="drawStatus" class="max-w-2xl mx-auto mb-6 text-center text-sm text-tarot-muted hidden"></div>
         <div id="cardsContainer" class="flex flex-wrap justify-center gap-6 md:gap-8 mb-10"></div>
 
         <!-- AI Interpretation -->

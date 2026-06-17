@@ -19,7 +19,8 @@
     publicDeck: { available: false },
     activeDeck: null,            // { id, name, emoji, totalCards, kind }
     activeDeckKind: null,        // 'owned' | 'system-default' | 'seed'
-    decksList: { owned: [], seeds: [], system: [] }
+    decksList: { owned: [], seeds: [], system: [] },
+    isDrawing: false
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -192,7 +193,17 @@
     });
     $('questionInput').addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === 'Enter') handleDraw();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleDraw();
+      }
+    });
+    document.querySelectorAll('.question-example').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $('questionInput').value = btn.textContent.trim();
+        $('charCount').textContent = $('questionInput').value.length + '/200';
+        $('questionInput').focus();
+      });
     });
 
     $('drawBtn').addEventListener('click', handleDraw);
@@ -266,6 +277,12 @@
     function row(d, opts = {}) {
       const isActive = d.id === activeId || d.isActive;
       const badge = opts.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-tarot-accent text-tarot-muted ml-1">${opts.badge}</span>` : '';
+      const actions = opts.kind === 'owned'
+        ? `<div class="deck-row-actions">
+            ${isActive ? '<span class="deck-row-tick">●</span>' : ''}
+            <button class="deck-row-delete" data-action="delete-deck" data-deck-id="${escapeAttr(d.id)}" type="button">删除</button>
+          </div>`
+        : (isActive ? '<span class="deck-row-tick">●</span>' : '');
       return `
         <div class="deck-row ${isActive ? 'is-active' : ''}" data-deck-id="${escapeAttr(d.id)}" data-kind="${opts.kind}">
           <div class="deck-row-emoji">${escapeHtml(d.emoji || '📚')}</div>
@@ -273,7 +290,7 @@
             <div class="deck-row-name">${escapeHtml(d.name || '未命名')}${badge}</div>
             <div class="deck-row-sub">${d.totalCards || 0} 张 · ${escapeHtml((d.description || '').slice(0, 40))}</div>
           </div>
-          ${isActive ? '<span class="deck-row-tick">●</span>' : ''}
+          ${actions}
         </div>
       `;
     }
@@ -295,7 +312,8 @@
     body.innerHTML = html;
 
     body.querySelectorAll('.deck-row').forEach(el => {
-      el.addEventListener('click', async () => {
+      el.addEventListener('click', async (ev) => {
+        if (ev.target.closest('[data-action="delete-deck"]')) return;
         const id = el.dataset.deckId;
         const kind = el.dataset.kind;
         if (kind === 'seed') {
@@ -310,6 +328,32 @@
         }
         closeDeckDrawer();
         location.reload();
+      });
+    });
+
+    body.querySelectorAll('[data-action="delete-deck"]').forEach(btn => {
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const id = btn.dataset.deckId;
+        const deck = owned.find(d => d.id === id);
+        if (!deck) return;
+        const isActive = id === activeId || deck.isActive;
+        const msg = isActive
+          ? `删除当前正在使用的牌堆「${deck.name || '未命名'}」？\n删除后会自动切换到其他可用牌堆或系统兜底。\n\n这会删除 ${deck.totalCards || 0} 张牌，无法恢复。抽牌历史不会自动删除。`
+          : `删除「${deck.name || '未命名'}」？\n这会删除这副牌堆中的 ${deck.totalCards || 0} 张牌，无法恢复。抽牌历史不会自动删除。`;
+        if (!confirm(msg)) return;
+        const r = await fetch(`/api/v2/decks/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          alert(`删除失败：${data.error || r.status}`);
+          return;
+        }
+        if (isActive) {
+          location.reload();
+          return;
+        }
+        await fetchDecksList();
+        renderDeckDrawer();
       });
     });
   }
@@ -382,16 +426,24 @@
 
   // ── 抽牌 ────────────────────────────────────────────
   async function handleDraw() {
+    if (state.isDrawing) return;
     const question = $('questionInput').value.trim();
     const spread = state.currentSpread;
     state.currentQuestion = question;
+    state.isDrawing = true;
+    setDrawBusy(true);
 
     $('cardsArea').classList.remove('hidden');
+    $('drawContext').classList.remove('hidden');
+    $('drawContext').innerHTML = renderDrawContext(question, spread);
+    $('drawStatus').classList.remove('hidden');
+    $('drawStatus').textContent = '正在从当前牌堆里抽牌…';
     $('cardsContainer').innerHTML = '';
     $('aiSection').classList.remove('hidden');
     $('aiContent').innerHTML = '';
     $('aiLoading').classList.remove('hidden');
     $('openDialogueBtn').classList.add('hidden');
+    $('cardsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
       const r = await fetch(`/api/v2/draw/${spread}`, {
@@ -405,19 +457,48 @@
       const cards = spread === 'single' ? [data.card] : data.cards;
       state.currentCards = cards;
 
+      $('drawStatus').textContent = cards.length === 1 ? '牌已经翻开，正在生成向内看的问题…' : '三张牌已经翻开，正在串起它们之间的关系…';
       renderCards(cards);
       await sleep(cards.length * 300 + 600);
 
       $('aiLoading').classList.add('hidden');
       if (spread === 'single') renderSingleAI(data);
       else renderThreeAI(data);
+      $('drawStatus').classList.add('hidden');
 
       $('openDialogueBtn').classList.remove('hidden');
-      $('cardsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
       $('aiLoading').classList.add('hidden');
+      $('drawStatus').classList.add('hidden');
       $('aiContent').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(e.message)}</div>`;
+    } finally {
+      state.isDrawing = false;
+      setDrawBusy(false);
     }
+  }
+
+  function setDrawBusy(busy) {
+    const drawBtn = $('drawBtn');
+    const redrawBtn = $('redrawBtn');
+    drawBtn.disabled = busy;
+    redrawBtn.disabled = busy;
+    drawBtn.classList.toggle('opacity-50', busy);
+    redrawBtn.classList.toggle('opacity-50', busy);
+    drawBtn.querySelector('span').textContent = busy ? '抽牌中…' : '抽牌';
+  }
+
+  function renderDrawContext(question, spread) {
+    const deckName = state.activeDeck?.name || '当前牌堆';
+    const spreadName = spread === 'three' ? '三牌阵' : '日签';
+    const q = question
+      ? `<div class="text-black font-medium">${escapeHtml(question)}</div>`
+      : `<div class="text-black font-medium">没有具体问题，作为一次随机提醒</div>`;
+    return `
+      <div class="inline-block max-w-full px-4 py-3 rounded-2xl bg-white border border-tarot-border text-left">
+        <div class="text-[11px] text-tarot-muted mb-1">${escapeHtml(deckName)} · ${spreadName}</div>
+        ${q}
+      </div>
+    `;
   }
 
   function renderCards(cards) {
@@ -447,7 +528,6 @@
             ${card.positionName ? `<div class="position-label">${escapeHtml(card.positionName)}</div>` : ''}
             <div class="flex items-center justify-between mb-3">
               <span class="text-xs text-tarot-muted">${escapeHtml(card.suitName || '')}</span>
-              <span class="text-xs text-tarot-muted">${contentTypeLabel(card.contentType)}</span>
             </div>
             <h3 class="font-serif font-bold text-xl text-black mb-3 leading-snug">${escapeHtml(card.title)}</h3>
             <div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed">
@@ -471,10 +551,6 @@
     });
   }
 
-  function contentTypeLabel(t) {
-    return ({ reflection: '反思', opinion: '观点', analysis: '洞察' })[t] || '';
-  }
-
   function renderCardBody(card) {
     if (card.contentType === 'analysis') {
       const summary = card.summary
@@ -496,8 +572,7 @@
   async function openCardDetail(card) {
     $('cardDetailMeta').textContent = [
       card.suitName || '',
-      card.positionName || '',
-      contentTypeLabel(card.contentType)
+      card.positionName || ''
     ].filter(Boolean).join(' · ');
     $('cardDetailTitle').textContent = card.title || '—';
     $('cardDetailBody').innerHTML = renderCardDetailBody(card);
@@ -544,7 +619,7 @@
     }
 
     if (card.contentType === 'analysis' && Array.isArray(card.insights) && card.insights.length) {
-      parts.push(`<span class="section-label">洞察</span>`);
+      parts.push(`<span class="section-label">要点</span>`);
       parts.push(card.insights.map(s =>
         `<div class="insight-card">${escapeHtml(s)}</div>`
       ).join(''));
@@ -581,11 +656,13 @@
 
   // ── AI 解读渲染 ─────────────────────────────────────
   function renderSingleAI(data) {
+    const questions = data.questions || [];
     const html = `
+      <div class="text-xs text-tarot-muted uppercase tracking-wider mb-2">这张牌先不替你下结论，只把问题推近一点</div>
       <div class="space-y-3">
-        ${(data.questions || []).map(q =>
+        ${questions.map(q =>
           `<p class="text-tarot-ivory italic leading-relaxed border-l-2 border-black pl-4">${escapeHtml(q)}</p>`
-        ).join('')}
+        ).join('') || '<p class="text-tarot-muted text-sm">这张牌暂时没有生成问题，可以点开牌面先看原文。</p>'}
       </div>
     `;
     $('aiContent').innerHTML = html;

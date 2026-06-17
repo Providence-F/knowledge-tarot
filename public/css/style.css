@@ -325,7 +325,23 @@ body {
 .deck-row-meta { flex: 1; min-width: 0; }
 .deck-row-name { font-weight: 600; color: #1a1a1a; font-size: 14px; line-height: 1.3; }
 .deck-row-sub { font-size: 11px; color: #888; margin-top: 2px; line-height: 1.3; }
+.deck-row-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .deck-row-tick { color: #1a1a1a; font-size: 14px; }
+.deck-row-delete {
+  min-height: 30px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: #999;
+  font-size: 12px;
+  border: 1px solid transparent;
+  transition: all 120ms;
+}
+.deck-row-delete:hover,
+.deck-row-delete:focus {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
 .deck-section-title {
   font-size: 11px;
   text-transform: uppercase;

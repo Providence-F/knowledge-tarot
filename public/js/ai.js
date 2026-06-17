@@ -131,7 +131,7 @@ const AI = (function() {
     }
 
     if (body.question) {
-      html += `<div class="pt-3 border-t border-gray-200 mt-3"><div class="text-black text-xs font-bold mb-1 uppercase tracking-wider">反思</div><p class="text-gray-700 italic">${Renderer.escapeHtml(body.question)}</p></div>`;
+      html += `<div class="pt-3 border-t border-gray-200 mt-3"><div class="text-black text-xs font-bold mb-1 uppercase tracking-wider">问题</div><p class="text-gray-700 italic">${Renderer.escapeHtml(body.question)}</p></div>`;
     }
 
     if (!html && body._raw) {
@@ -145,7 +145,7 @@ const AI = (function() {
 
   function replaceCardTitles(aiTitles) {
     const cardElements = document.querySelectorAll('.card-wrapper');
-    // 中性兜底词：明确表示"AI 没给出标题"，而不是伪装成有内容的洞察
+    // 中性兜底词：明确表示"AI 没给出标题"，而不是伪装成有内容的结论
     const defaultTitles = ['待解', '无题', '空白', '在沉默处', '—'];
 
     cardElements.forEach((cardEl, index) => {

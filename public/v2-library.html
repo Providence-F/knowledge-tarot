@@ -49,49 +49,53 @@
 
     <!-- Tabs -->
     <div class="flex items-center gap-1 mb-8 border-b border-tarot-border overflow-x-auto">
-      <button class="lib-tab active" data-tab="deck">牌堆 <span class="badge" id="badgeDeck"></span></button>
+      <button class="lib-tab active" data-tab="decks">牌堆管理 <span class="badge" id="badgeDecks"></span></button>
+      <button class="lib-tab" data-tab="deck">当前牌堆 <span class="badge" id="badgeDeck"></span></button>
       <button class="lib-tab" data-tab="history">抽牌历史 <span class="badge" id="badgeHistory"></span></button>
       <button class="lib-tab" data-tab="dialogues">对话历史 <span class="badge" id="badgeDialogues"></span></button>
       <button class="lib-tab" data-tab="account">身份</button>
     </div>
 
+    <!-- Decks Manager Tab -->
+    <section id="tab-decks" class="lib-pane">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+        <div>
+          <h2 class="font-serif text-2xl font-bold text-black mb-1">牌堆管理</h2>
+          <p class="text-sm text-tarot-muted">管理你克隆、导入和创建的牌堆。系统和示范牌堆只能使用或克隆，不能删除。</p>
+        </div>
+        <a href="v2-import.html" class="inline-flex items-center justify-center px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition">+ 新建 / 导入牌堆</a>
+      </div>
+      <div id="decksManager" class="space-y-6">
+        <div class="p-6 text-center text-tarot-muted text-sm border border-tarot-border rounded-xl">加载中...</div>
+      </div>
+    </section>
+
     <!-- Deck Tab -->
-    <section id="tab-deck" class="lib-pane">
+    <section id="tab-deck" class="lib-pane hidden">
       <!-- Stats overview -->
-      <div id="deckStats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div id="deckStats" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <div class="stat-cell">
           <div class="stat-num" id="statTotal">—</div>
           <div class="stat-label">总牌数</div>
         </div>
-        <div class="stat-cell" data-type="reflection">
-          <div class="stat-num" id="statReflection">—</div>
-          <div class="stat-label">反思 · 原文即用</div>
+        <div class="stat-cell">
+          <div class="stat-num" id="statVisible">—</div>
+          <div class="stat-label">当前显示</div>
         </div>
-        <div class="stat-cell" data-type="opinion">
-          <div class="stat-num" id="statOpinion">—</div>
-          <div class="stat-label">观点 · 提炼一句</div>
-        </div>
-        <div class="stat-cell" data-type="analysis">
-          <div class="stat-num" id="statAnalysis">—</div>
-          <div class="stat-label">洞察 · 三条要点</div>
+        <div class="stat-cell">
+          <div class="stat-num" id="statActiveDeck">—</div>
+          <div class="stat-label">当前牌堆</div>
         </div>
       </div>
 
       <!-- Filter bar -->
       <div class="filter-bar mb-4">
-        <div class="filter-chips" id="typeFilter">
-          <button class="chip active" data-filter="all">全部</button>
-          <button class="chip" data-filter="reflection">反思</button>
-          <button class="chip" data-filter="opinion">观点</button>
-          <button class="chip" data-filter="analysis">洞察</button>
-        </div>
         <div class="filter-controls">
           <input id="deckSearch" type="text" placeholder="搜索标题或正文..." class="flex-1 min-w-0 px-3 py-2 border border-tarot-border rounded-lg text-sm focus:outline-none focus:border-black/40">
           <select id="deckSort" class="px-3 py-2 border border-tarot-border rounded-lg text-sm bg-white focus:outline-none focus:border-black/40">
             <option value="newest">最新优先</option>
             <option value="oldest">最早优先</option>
             <option value="title">标题排序</option>
-            <option value="type">按类型分组</option>
           </select>
           <button id="shareDeckBtn" class="px-3 py-2 text-xs text-black border border-tarot-border rounded-lg hover:bg-tarot-accent transition whitespace-nowrap">分享牌堆</button>
           <button id="clearDeckBtn" class="px-3 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition whitespace-nowrap">清空牌堆</button>
@@ -187,6 +191,50 @@
     }
     .row-action:hover { border-color: #fecaca; background: #fef2f2; }
 
+    .deck-manager-section-title {
+      font-size: 12px;
+      letter-spacing: .08em;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .managed-deck-card {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e5e5e5;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .managed-deck-card.is-active { border-color: #111; background: #fafafa; }
+    .managed-deck-emoji { font-size: 24px; line-height: 1; flex-shrink: 0; }
+    .managed-deck-body { flex: 1; min-width: 0; }
+    .managed-deck-title { font-weight: 700; color: #111; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .managed-deck-desc { font-size: 12px; color: #777; margin-top: 3px; line-height: 1.45; }
+    .managed-deck-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .managed-deck-action {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #e5e5e5;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      transition: all .15s;
+    }
+    .managed-deck-action:hover { border-color: #111; }
+    .managed-deck-action.danger { color: #b91c1c; border-color: #fecaca; }
+    .managed-deck-action.danger:hover { background: #fef2f2; }
+    .managed-deck-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #111;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
     /* Deck stats */
     .stat-cell {
       padding: 14px 16px;
@@ -265,18 +313,6 @@
       gap: 8px;
       margin-bottom: 6px;
     }
-    .type-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 10px;
-      letter-spacing: .04em;
-      border-radius: 999px;
-      border: 1px solid;
-    }
-    .type-badge.t-reflection { color: #4a5568; border-color: #cbd5e0; background: #f7fafc; }
-    .type-badge.t-opinion    { color: #744210; border-color: #f6e05e; background: #fffbea; }
-    .type-badge.t-analysis   { color: #22543d; border-color: #9ae6b4; background: #f0fff4; }
-    .type-badge.t-other      { color: #888; border-color: #e5e5e5; background: #f5f5f5; }
     .card-tile h4 {
       font-family: Georgia, "Noto Serif SC", serif;
       font-size: 15px;
