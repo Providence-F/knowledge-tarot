@@ -20,6 +20,7 @@ const { triage } = require('./triager');
 const { extractByType } = require('./extractors');
 const { paintSuit } = require('./classifiers/suit-painter');
 const { hashId } = require('./utils');
+const embedder = require('./embedder');
 
 const ADAPTERS = {
   obsidian: input => obsidian.loadFromVault(input.path, input.options),
@@ -41,8 +42,19 @@ async function processItems(rawItems, onProgress, concurrency = 6) {
     kept: 0,
     droppedByCategory: { data: 0, code: 0, other: 0 },
     categoryDist: {},
-    suitDist: {}
+    suitDist: {},
+    embedded: 0,
+    embedFailed: 0
   };
+
+  // 启动 embedder（不阻塞——失败时 cards 仍能继续生成，embedding=null）
+  let embedderReady = false;
+  try {
+    await embedder.getEmbedder().start();
+    embedderReady = true;
+  } catch (e) {
+    console.error('[pipeline] embedder unavailable, cards will have embedding=null:', e.message);
+  }
 
   const cards = [];
   let nextIdx = 0;
@@ -74,6 +86,22 @@ async function processItems(rawItems, onProgress, concurrency = 6) {
 
         const suit = await paintSuit(fields);
 
+        // embedding 用 summary 优先，回退到 passage 前 300 字。
+        // 失败不阻塞，置 null，draw-engine 会容忍（降级纯随机）
+        let embedding = null;
+        if (embedderReady) {
+          const embedText = (fields.summary || fields.passage || fields.title || '').slice(0, 500);
+          if (embedText.trim()) {
+            try {
+              embedding = await embedder.embed(embedText);
+              stats.embedded++;
+            } catch (e) {
+              stats.embedFailed++;
+              console.error(`[pipeline] embed failed for item ${i}:`, e.message);
+            }
+          }
+        }
+
         const card = {
           id: hashId(item.sourceMeta?.type || 'src', item.id),
           contentType: fields.contentType,
@@ -90,7 +118,8 @@ async function processItems(rawItems, onProgress, concurrency = 6) {
             label: item.sourceMeta?.label || null
           },
           createdAt: item.createdAt || Date.now(),
-          tags: item.tags || []
+          tags: item.tags || [],
+          embedding
         };
 
         cards.push(card);
