@@ -35,7 +35,8 @@
         "harry-potter",
         "魔法石",
         "碗橱里的男孩"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "iwbb1rcs",
@@ -57,7 +58,8 @@
         "harry-potter",
         "魔法石",
         "霍格沃茨来信"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "3ei-x9zl",
@@ -79,7 +81,8 @@
         "harry-potter",
         "魔法石",
         "九又四分之三站台"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "jypxt7d2",
@@ -101,7 +104,8 @@
         "harry-potter",
         "魔法石",
         "分院帽"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "3v6mehjm",
@@ -123,7 +127,8 @@
         "harry-potter",
         "魔法石",
         "厄里斯魔镜"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "wazafsow",
@@ -145,7 +150,8 @@
         "harry-potter",
         "魔法石",
         "赫敏的举手"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "0ozzrrmj",
@@ -167,7 +173,8 @@
         "harry-potter",
         "魔法石",
         "罗恩的巫师棋"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "0zcopt68",
@@ -189,7 +196,8 @@
         "harry-potter",
         "魔法石",
         "斯内普的误判"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "2wwxjexf",
@@ -211,7 +219,8 @@
         "harry-potter",
         "魔法石",
         "奇洛的后脑"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "mxkj6acp",
@@ -233,7 +242,8 @@
         "harry-potter",
         "魔法石",
         "莉莉的保护"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "v3qeeiwa",
@@ -255,7 +265,8 @@
         "harry-potter",
         "密室",
         "蛇佬腔"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "q78a8yo0",
@@ -277,7 +288,8 @@
         "harry-potter",
         "密室",
         "多比的警告"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "sm4qacnq",
@@ -299,7 +311,8 @@
         "harry-potter",
         "密室",
         "日记本"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "occkmepl",
@@ -321,7 +334,8 @@
         "harry-potter",
         "密室",
         "金妮的沉默"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "xg52-wwr",
@@ -343,7 +357,8 @@
         "harry-potter",
         "密室",
         "洛哈特的微笑"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "dliv_8tb",
@@ -365,7 +380,8 @@
         "harry-potter",
         "密室",
         "赫敏石化"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "skiwofhh",
@@ -387,7 +403,8 @@
         "harry-potter",
         "密室",
         "福克斯的眼泪"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lhui0bgb",
@@ -409,7 +426,8 @@
         "harry-potter",
         "密室",
         "格兰芬多宝剑"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "pw2ezknu",
@@ -431,7 +449,8 @@
         "harry-potter",
         "密室",
         "释放多比"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "15oeg1u2",
@@ -453,7 +472,8 @@
         "harry-potter",
         "密室",
         "不是斯莱特林"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "kawanghb",
@@ -475,7 +495,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "摄魂怪"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "1zqeazi0",
@@ -497,7 +518,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "卢平的课"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ejl-l8jm",
@@ -519,7 +541,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "博格特衣柜"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "8c3foanp",
@@ -541,7 +564,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "活点地图"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "qosunmrk",
@@ -563,7 +587,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "小天狼星真相"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "30cv4rgr",
@@ -585,7 +610,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "彼得的背叛"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "17-rwbmg",
@@ -607,7 +633,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "时间转换器"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "cpsujmlo",
@@ -629,7 +656,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "守护神咒"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lqk3q-oq",
@@ -651,7 +679,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "巴克比克逃脱"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "b91rdec6",
@@ -673,7 +702,8 @@
         "harry-potter",
         "阿兹卡班囚徒",
         "月圆的卢平"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "xxz8_iod",
@@ -695,7 +725,8 @@
         "harry-potter",
         "火焰杯",
         "三强争霸报名"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "akdsokna",
@@ -717,7 +748,8 @@
         "harry-potter",
         "火焰杯",
         "穆迪的课堂"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "n6e0nqbf",
@@ -739,7 +771,8 @@
         "harry-potter",
         "火焰杯",
         "第一项火龙"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "giia8g30",
@@ -761,7 +794,8 @@
         "harry-potter",
         "火焰杯",
         "圣诞舞会"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "tqubzwlp",
@@ -783,7 +817,8 @@
         "harry-potter",
         "火焰杯",
         "第二项湖底"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "amo4kmfq",
@@ -805,7 +840,8 @@
         "harry-potter",
         "火焰杯",
         "丽塔斯基特"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "z_zjnc-g",
@@ -827,7 +863,8 @@
         "harry-potter",
         "火焰杯",
         "塞德里克之死"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "v2drwapn",
@@ -849,7 +886,8 @@
         "harry-potter",
         "火焰杯",
         "伏地魔复活"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "1cobxenr",
@@ -871,7 +909,8 @@
         "harry-potter",
         "火焰杯",
         "双胞胎的玩笑"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "gf7jwyk5",
@@ -893,7 +932,8 @@
         "harry-potter",
         "火焰杯",
         "邓布利多的相信"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ga5iwola",
@@ -915,7 +955,8 @@
         "harry-potter",
         "凤凰社",
         "乌姆里奇"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ful9e5dm",
@@ -937,7 +978,8 @@
         "harry-potter",
         "凤凰社",
         "邓布利多军"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "mguinsxc",
@@ -959,7 +1001,8 @@
         "harry-potter",
         "凤凰社",
         "哈利的愤怒"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "aoagnenn",
@@ -981,7 +1024,8 @@
         "harry-potter",
         "凤凰社",
         "预言球"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "p_r-dlj1",
@@ -1003,7 +1047,8 @@
         "harry-potter",
         "凤凰社",
         "秋张的眼泪"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ezp5_fxc",
@@ -1025,7 +1070,8 @@
         "harry-potter",
         "凤凰社",
         "小天狼星离开"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "gtt0invv",
@@ -1047,7 +1093,8 @@
         "harry-potter",
         "凤凰社",
         "卢娜的平静"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "vsdn7vk_",
@@ -1069,7 +1116,8 @@
         "harry-potter",
         "凤凰社",
         "魔法部不信"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lfixp5tt",
@@ -1091,7 +1139,8 @@
         "harry-potter",
         "凤凰社",
         "伤疤连接"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "jkgbsv4s",
@@ -1113,7 +1162,8 @@
         "harry-potter",
         "凤凰社",
         "邓布利多的距离"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "cu4sirrd",
@@ -1135,7 +1185,8 @@
         "harry-potter",
         "混血王子",
         "旧课本批注"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "van3as_t",
@@ -1157,7 +1208,8 @@
         "harry-potter",
         "混血王子",
         "斯拉格霍恩"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "dgm1ff2r",
@@ -1179,7 +1231,8 @@
         "harry-potter",
         "混血王子",
         "魂器课题"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "1hhjvcjh",
@@ -1201,7 +1254,8 @@
         "harry-potter",
         "混血王子",
         "德拉科的任务"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "5za8lcak",
@@ -1223,7 +1277,8 @@
         "harry-potter",
         "混血王子",
         "山洞药水"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "57akrul7",
@@ -1245,7 +1300,8 @@
         "harry-potter",
         "混血王子",
         "天文塔"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lcuyplrt",
@@ -1267,7 +1323,8 @@
         "harry-potter",
         "混血王子",
         "混血王子的身份"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "eecbtwzl",
@@ -1289,7 +1346,8 @@
         "harry-potter",
         "混血王子",
         "金妮与哈利"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "02wj2l02",
@@ -1311,7 +1369,8 @@
         "harry-potter",
         "混血王子",
         "罗恩中毒"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ze_ervwd",
@@ -1333,7 +1392,8 @@
         "harry-potter",
         "混血王子",
         "没有葬礼式答案"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "vtvoq8sh",
@@ -1355,7 +1415,8 @@
         "harry-potter",
         "死亡圣器",
         "七个哈利"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "izgaz5nk",
@@ -1377,7 +1438,8 @@
         "harry-potter",
         "死亡圣器",
         "魂器项链"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "dnm6tde8",
@@ -1399,7 +1461,8 @@
         "harry-potter",
         "死亡圣器",
         "罗恩离队"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "7x7bxjqs",
@@ -1421,7 +1484,8 @@
         "harry-potter",
         "死亡圣器",
         "银色牝鹿"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "2h8l5t7b",
@@ -1443,7 +1507,8 @@
         "harry-potter",
         "死亡圣器",
         "贝拉特里克斯金库"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "fvel1dfg",
@@ -1465,7 +1530,8 @@
         "harry-potter",
         "死亡圣器",
         "马尔福庄园"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "w7-mlwws",
@@ -1487,7 +1553,8 @@
         "harry-potter",
         "死亡圣器",
         "多比之死"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "p6jbd3xa",
@@ -1509,7 +1576,8 @@
         "harry-potter",
         "死亡圣器",
         "斯内普记忆"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "vuztb0bk",
@@ -1531,7 +1599,8 @@
         "harry-potter",
         "死亡圣器",
         "禁林赴死"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "q5gbrclr",
@@ -1553,7 +1622,8 @@
         "harry-potter",
         "死亡圣器",
         "纳威斩蛇"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "bil6zb_n",
@@ -1575,7 +1645,8 @@
         "harry-potter",
         "死亡圣器",
         "老魔杖失效"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lq0g8lxa",
@@ -1597,7 +1668,9 @@
         "harry-potter",
         "死亡圣器",
         "十九年后"
-      ]
+      ],
+      "embedding": null
     }
-  ]
+  ],
+  "schemaVersion": 2
 }

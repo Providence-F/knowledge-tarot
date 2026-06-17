@@ -1,15 +1,15 @@
 # Knowledge Tarot v2.0 "重逢之书" Migration Progress
 
 Last updated: 2026-06-18
-Current phase: Phase 0
-Active task: T03
-Status: T01 + T02 done, queued T03
+Current phase: Phase 1
+Active task: T04
+Status: Phase 0 complete (T01+T02+T03), starting T04
 
 ## Phase 0 — 地基
 
 - [x] T01 删 v1 路由 (server/index.js 432→60 行)
 - [x] T02 引入 embedding 服务（src/embedder.js + scripts/embedder_worker.py + setup-embedder.sh）
-- [ ] T03 schema 升级（embedding、orientation 字段）+ migration
+- [x] T03 schema 升级 + migration（schemaVersion=2，每张 card 加 embedding: null）
 
 ## Phase 1 — 算法核心
 
@@ -55,3 +55,4 @@ Status: T01 + T02 done, queued T03
 - 2026-06-17: 启动节奏激进，ScheduleWakeup dynamic mode
 - 2026-06-17: T01 验证：v1 /api/interpret + /api/deep-explore POST 都 404；/api/v2/me、/api/health 正常
 - 2026-06-18: T02 验证：bge-small-zh-v1.5 加载 4.1s，单 embed 2.58ms（resident），输出 512 维已 L2 归一化，两条相关文本 cosine=0.614（落"若有似无"区 0.4-0.7，反向 RAG 假设成立）
+- 2026-06-18: T03 决策：orientation 不入 card schema（draw-time 决定，落 history）。Migration 仅加 schemaVersion=2 + embedding: null，幂等。16 deck / 2082 卡迁移成功

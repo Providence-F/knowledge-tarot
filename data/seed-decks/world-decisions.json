@@ -40,7 +40,8 @@
         "history",
         "罗马共和国",
         "公元前49年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "3ltmorhf",
@@ -67,7 +68,8 @@
         "history",
         "罗马帝国",
         "公元前27年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "a47dw_su",
@@ -94,7 +96,8 @@
         "history",
         "罗马帝国",
         "330年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "4fvp8rus",
@@ -121,7 +124,8 @@
         "history",
         "中国隋朝",
         "589年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lzvkzsfa",
@@ -148,7 +152,8 @@
         "history",
         "唐朝",
         "626年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "_n90ewmx",
@@ -175,7 +180,8 @@
         "history",
         "法兰克王国",
         "800年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ooj4vbx9",
@@ -202,7 +208,8 @@
         "history",
         "英格兰",
         "1066年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "w4dwgneu",
@@ -229,7 +236,8 @@
         "history",
         "苏德战争",
         "1941年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "bvedi28j",
@@ -256,7 +264,8 @@
         "history",
         "明朝",
         "1405年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "tg2y_wq1",
@@ -283,7 +292,8 @@
         "history",
         "西班牙",
         "1492年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "c3ws3anc",
@@ -310,7 +320,8 @@
         "history",
         "宗教改革",
         "1517年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "ztbos9qe",
@@ -337,7 +348,8 @@
         "history",
         "英格兰",
         "1559年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "1ckmrhe-",
@@ -364,7 +376,8 @@
         "history",
         "日本",
         "1603年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "h7hfkv6b",
@@ -391,7 +404,8 @@
         "history",
         "英国内战",
         "1649年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "rdjwyewv",
@@ -418,7 +432,8 @@
         "history",
         "俄罗斯",
         "1698年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "2rbhyrxk",
@@ -445,7 +460,8 @@
         "history",
         "北美殖民地",
         "1776年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "9uxihl_x",
@@ -472,7 +488,8 @@
         "history",
         "法国革命",
         "1789年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "hhwbed68",
@@ -499,7 +516,8 @@
         "history",
         "法国",
         "1799年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "xp-p_xbf",
@@ -526,7 +544,8 @@
         "history",
         "海地",
         "1804年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "dnphevup",
@@ -553,7 +572,8 @@
         "history",
         "美国内战",
         "1863年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "uvnojozg",
@@ -580,7 +600,8 @@
         "history",
         "日本",
         "1871年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "s37qnf4v",
@@ -607,7 +628,8 @@
         "history",
         "德意志",
         "1871年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "gfr-_48p",
@@ -634,7 +656,8 @@
         "history",
         "中华民国",
         "1912年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "skstbl6-",
@@ -661,7 +684,8 @@
         "history",
         "俄国",
         "1917年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "mjny5hie",
@@ -688,7 +712,8 @@
         "history",
         "一战后欧洲",
         "1919年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "lx7mtliw",
@@ -715,7 +740,8 @@
         "history",
         "印度独立运动",
         "1930年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "xba6vqaj",
@@ -742,7 +768,8 @@
         "history",
         "美国大萧条",
         "1933年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "conoyh5b",
@@ -769,7 +796,8 @@
         "history",
         "欧洲",
         "1938年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "rjctaiqo",
@@ -796,7 +824,8 @@
         "history",
         "英国二战",
         "1940年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "91vqkcm9",
@@ -823,7 +852,8 @@
         "history",
         "太平洋战争",
         "1941年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "wpifnjld",
@@ -850,7 +880,8 @@
         "history",
         "二战末期",
         "1945年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "o7rsdxrv",
@@ -877,7 +908,8 @@
         "history",
         "冷战初期",
         "1947年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "-npilmgl",
@@ -904,7 +936,8 @@
         "history",
         "冷战",
         "1955年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "78kjnoqe",
@@ -931,7 +964,8 @@
         "history",
         "古巴导弹危机",
         "1962年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "d3vdof33",
@@ -958,7 +992,8 @@
         "history",
         "美国",
         "1962年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "e6oomgt5",
@@ -985,7 +1020,8 @@
         "history",
         "法国",
         "1962年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "dlp7qn-d",
@@ -1012,7 +1048,8 @@
         "history",
         "冷战",
         "1972年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "yczpixga",
@@ -1039,7 +1076,8 @@
         "history",
         "中国",
         "1977年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "jddkt6oa",
@@ -1066,7 +1104,8 @@
         "history",
         "中国",
         "1978年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "0-ozwjig",
@@ -1093,7 +1132,8 @@
         "history",
         "英国",
         "1982年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "6ghwcq3r",
@@ -1120,7 +1160,8 @@
         "history",
         "苏联",
         "1985年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "jxgckc-2",
@@ -1147,7 +1188,8 @@
         "history",
         "东德",
         "1989年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "4d9wsn4h",
@@ -1174,7 +1216,8 @@
         "history",
         "南非",
         "1994年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "8n8xdxa-",
@@ -1201,7 +1244,8 @@
         "history",
         "欧洲",
         "1999年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "u74f7nwx",
@@ -1228,7 +1272,8 @@
         "history",
         "美国",
         "2001年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "_zrzjtc7",
@@ -1255,7 +1300,8 @@
         "history",
         "中国",
         "2001年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "7m4rjznj",
@@ -1282,7 +1328,8 @@
         "history",
         "科技产业",
         "2007年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "50qraexk",
@@ -1309,7 +1356,8 @@
         "history",
         "金融危机",
         "2008年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "hhbjmhzr",
@@ -1336,7 +1384,8 @@
         "history",
         "美国金融危机",
         "2009年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "mcfbmj5p",
@@ -1363,7 +1412,8 @@
         "history",
         "欧债危机",
         "2010年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "o0w9bger",
@@ -1390,7 +1440,8 @@
         "history",
         "英国",
         "2016年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "koktdlbo",
@@ -1417,7 +1468,8 @@
         "history",
         "美国",
         "2017年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "tuwdntdg",
@@ -1444,7 +1496,8 @@
         "history",
         "全球公共卫生",
         "2020年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "vuninjv5",
@@ -1471,7 +1524,8 @@
         "history",
         "生物科技",
         "2020年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "hbsng01s",
@@ -1498,7 +1552,8 @@
         "history",
         "欧洲安全",
         "2022年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "axcbcipr",
@@ -1525,7 +1580,8 @@
         "history",
         "北欧安全",
         "2022年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "xn1sh4nc",
@@ -1552,7 +1608,8 @@
         "history",
         "人工智能",
         "2022年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "zdu5_b6j",
@@ -1579,7 +1636,8 @@
         "history",
         "人工智能治理",
         "2024年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "i1xvnqsl",
@@ -1606,7 +1664,8 @@
         "history",
         "日本经济",
         "2024年"
-      ]
+      ],
+      "embedding": null
     },
     {
       "id": "nmfrebvr",
@@ -1633,7 +1692,9 @@
         "history",
         "国际贸易",
         "2020年代"
-      ]
+      ],
+      "embedding": null
     }
-  ]
+  ],
+  "schemaVersion": 2
 }
