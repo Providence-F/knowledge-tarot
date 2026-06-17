@@ -411,6 +411,11 @@ function buildDeepExplorePrompt(question, card) {
   return prompt;
 }
 
+// ── Share landing ────────────────────────────────────────
+app.get('/share/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'v2-share-receive.html'));
+});
+
 // ── SPA fallback ─────────────────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));

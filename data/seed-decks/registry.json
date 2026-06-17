@@ -1,0 +1,38 @@
+[
+  {
+    "id": "seed-jay-lyrics",
+    "slug": "jay-lyrics",
+    "name": "周杰伦歌词",
+    "description": "把华语流行音乐当作一面镜子——稻香、青花瓷、菊花台……每张牌都是一段被歌词触发的人生命题。",
+    "emoji": "🎵",
+    "totalCards": 16,
+    "order": 1
+  },
+  {
+    "id": "seed-harry-potter",
+    "slug": "harry-potter",
+    "name": "哈利波特金句",
+    "description": "从 7 部书里抽出的成长母题——选择 vs 能力、镜中欲望、邓布利多的爱、斯内普的双面……",
+    "emoji": "⚡",
+    "totalCards": 17,
+    "order": 2
+  },
+  {
+    "id": "seed-world-decisions",
+    "slug": "world-decisions",
+    "name": "世界历史重大决策",
+    "description": "改变历史走向的决策时刻——古巴导弹、马歇尔计划、邓小平南巡、戴高乐伦敦呼吁……当作决策模型抽出来当镜子。",
+    "emoji": "🏛️",
+    "totalCards": 20,
+    "order": 3
+  },
+  {
+    "id": "seed-ai-dialogues",
+    "slug": "ai-dialogues",
+    "name": "AI 深度对话",
+    "description": "人和 AI 真实质感的对话片段——焦虑的成分分析、被讨厌的练习、放弃的资格……",
+    "emoji": "🤖",
+    "totalCards": 20,
+    "order": 4
+  }
+]

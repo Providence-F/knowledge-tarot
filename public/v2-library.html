@@ -93,6 +93,7 @@
             <option value="title">标题排序</option>
             <option value="type">按类型分组</option>
           </select>
+          <button id="shareDeckBtn" class="px-3 py-2 text-xs text-black border border-tarot-border rounded-lg hover:bg-tarot-accent transition whitespace-nowrap">分享牌堆</button>
           <button id="clearDeckBtn" class="px-3 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition whitespace-nowrap">清空牌堆</button>
         </div>
       </div>
@@ -384,6 +385,29 @@
         <div class="px-7 py-3 border-t border-tarot-border flex items-center justify-between text-xs text-tarot-muted">
           <span id="cardModalCount"></span>
           <span>Esc 关闭</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share modal -->
+  <div id="libShareModal" class="hidden">
+    <div id="libShareOverlay" class="lib-modal-overlay"></div>
+    <div class="lib-modal">
+      <div class="lib-modal-box" style="max-width: 480px;">
+        <div class="px-6 py-4 border-b border-tarot-border flex items-center justify-between">
+          <h3 class="font-serif font-bold text-lg">分享当前牌堆</h3>
+          <button id="libShareClose" class="text-tarot-muted hover:text-black">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="px-6 py-5">
+          <p class="text-sm text-tarot-muted mb-4">把这个链接发给朋友，他打开后可以把这副牌堆克隆到自己的牌库（独立副本，互不影响）。链接 30 天内有效。</p>
+          <div class="flex gap-2 mb-2">
+            <input id="libShareUrl" type="text" readonly class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm bg-tarot-accent font-mono">
+            <button id="libShareCopy" class="px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition whitespace-nowrap">复制</button>
+          </div>
+          <div id="libShareHint" class="hidden text-xs text-green-700">已复制到剪贴板 ✓</div>
         </div>
       </div>
     </div>

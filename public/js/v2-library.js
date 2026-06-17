@@ -66,6 +66,48 @@
     });
 
     $('restoreBtn').addEventListener('click', handleRestore);
+
+    // share current deck
+    const shareBtn = $('shareDeckBtn');
+    if (shareBtn) shareBtn.addEventListener('click', handleShare);
+    $('libShareClose')?.addEventListener('click', () => $('libShareModal').classList.add('hidden'));
+    $('libShareOverlay')?.addEventListener('click', () => $('libShareModal').classList.add('hidden'));
+    $('libShareCopy')?.addEventListener('click', async () => {
+      const url = $('libShareUrl').value;
+      try { await navigator.clipboard.writeText(url); }
+      catch { $('libShareUrl').select(); document.execCommand('copy'); }
+      const hint = $('libShareHint');
+      hint.classList.remove('hidden');
+      setTimeout(() => hint.classList.add('hidden'), 2000);
+    });
+  }
+
+  async function handleShare() {
+    try {
+      const meRes = await fetch('/api/v2/me');
+      const me = await meRes.json();
+      const deckId = me.activeDeck?.id;
+      if (!deckId || me.activeDeckKind === 'system-default' || me.activeDeckKind === 'seed') {
+        alert('当前是只读牌堆（系统兜底或示范牌堆），不能分享。请切到自己的牌堆后再试。');
+        return;
+      }
+      const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        alert('生成分享链接失败：' + (data.error || r.status));
+        return;
+      }
+      const data = await r.json();
+      const fullUrl = location.origin + data.shareUrl;
+      $('libShareUrl').value = fullUrl;
+      $('libShareModal').classList.remove('hidden');
+    } catch (e) {
+      alert('网络错误：' + e.message);
+    }
   }
 
   function switchTab(name) {

@@ -16,7 +16,10 @@
     currentSpread: 'single',
     currentCards: [],
     currentQuestion: '',
-    publicDeck: { available: false }
+    publicDeck: { available: false },
+    activeDeck: null,            // { id, name, emoji, totalCards, kind }
+    activeDeckKind: null,        // 'owned' | 'system-default' | 'seed'
+    decksList: { owned: [], seeds: [], system: [] }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -26,21 +29,22 @@
     bindEvents();
     bindOnboarding();
 
-    // 决定首屏：先看是否需要引导
-    const mode = state.user?.mode;
-    if (!mode) {
-      // 没选过：弹引导墙
+    // 决定首屏：
+    // 1) 没 activeDeck 且没 onboardedAt -> 弹引导墙
+    // 2) activeDeck 是 system-default / seed -> 直接抽牌（mode banner 视情况）
+    // 3) activeDeck 是 owned + 有牌 -> 抽牌
+    // 4) activeDeck 是 owned + 0 张 -> empty state
+    if (!state.activeDeck && !state.user?.onboardedAt && !state.user?.activeDeckId) {
       showOnboarding();
-    } else if (mode === 'public') {
+      return;
+    }
+    if (state.activeDeckKind === 'system-default') {
       $('modeBanner').classList.remove('hidden');
       $('drawSection').classList.remove('hidden');
+    } else if (state.deckSize === 0 && state.activeDeckKind === 'owned') {
+      $('emptyState').classList.remove('hidden');
     } else {
-      // private：按是否有牌决定
-      if (state.deckSize === 0) {
-        $('emptyState').classList.remove('hidden');
-      } else {
-        $('drawSection').classList.remove('hidden');
-      }
+      $('drawSection').classList.remove('hidden');
     }
   }
 
@@ -49,13 +53,22 @@
       const r = await fetch('/api/v2/me');
       const data = await r.json();
       state.user = data.user;
-      state.deckSize = data.deckSize || 0;
+      state.activeDeck = data.activeDeck;
+      state.activeDeckKind = data.activeDeckKind;
       state.publicDeck = data.publicDeck || { available: false };
-      const badgeText = state.user?.mode === 'public'
-        ? `${state.publicDeck.totalCards || 0} 张 · DEMO`
-        : (state.deckSize > 0 ? `${state.deckSize} 张牌` : '');
+      state.deckSize = data.activeDeck?.totalCards || 0;
+
+      // 顶栏 deck 信息
+      const name = data.activeDeck?.name || (state.user?.mode === 'public' ? state.publicDeck.name || '系统兜底牌堆' : '');
+      const emoji = data.activeDeck?.emoji || (data.activeDeckKind === 'system-default' ? '🌌' : '📚');
+      const cnt = data.activeDeck?.totalCards || 0;
+      const $name = $('activeDeckName'); if ($name) $name.textContent = name || '未选择';
+      const $em = $('activeDeckEmoji'); if ($em) $em.textContent = emoji;
+      const $emM = $('activeDeckEmojiMobile'); if ($emM) $emM.textContent = emoji;
+      const badgeText = cnt > 0 ? `${cnt} 张` : '';
       $('deckBadge').textContent = badgeText;
-      const dbm = $('deckBadgeMobile'); if (dbm) dbm.textContent = badgeText;
+      const dbm = $('deckBadgeMobile'); if (dbm) dbm.textContent = cnt > 0 ? `${cnt}` : '';
+
       const styleVal = data.user?.style || 'gentle';
       $('styleSelect').value = styleVal;
       const sm = $('styleSelectMobile'); if (sm) sm.value = styleVal;
@@ -71,20 +84,20 @@
           wrap.classList.add('flex');
         }
       }
-      // 模式切换按钮
+      // 模式切换按钮：保留兼容（v1.0 公共/私有切换）
       const switchBtn = $('switchModeBtn');
       if (switchBtn) {
-        if (state.user?.mode === 'public') {
+        if (state.activeDeckKind && state.activeDeckKind !== 'owned') {
           switchBtn.textContent = '切换到我的牌堆 →';
           switchBtn.classList.remove('hidden');
-        } else if (state.user?.mode === 'private' && state.publicDeck.available) {
+        } else if (state.publicDeck.available) {
           switchBtn.textContent = '体验公共牌堆 (DEMO) →';
           switchBtn.classList.remove('hidden');
         } else {
           switchBtn.classList.add('hidden');
         }
       }
-      // 公共牌堆描述
+      // 公共牌堆 onboarding 描述
       if (state.publicDeck.available) {
         const sizeEl = $('onbPublicSize');
         if (sizeEl) sizeEl.textContent = `📚 ${state.publicDeck.totalCards} 张 · ${state.publicDeck.sourceLabel || ''}`;
@@ -99,6 +112,14 @@
           onbPub.classList.add('opacity-50', 'cursor-not-allowed');
         }
       }
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchDecksList() {
+    try {
+      const r = await fetch('/api/v2/decks');
+      if (!r.ok) return;
+      state.decksList = await r.json();
     } catch (e) { console.error(e); }
   }
 
@@ -200,6 +221,96 @@
       if (e.key !== 'Escape') return;
       if (!$('cardDetailModal').classList.contains('hidden')) closeCardDetail();
       else if (!$('dialogueModal').classList.contains('hidden')) closeDialogue();
+      else if (!$('deckDrawer').classList.contains('hidden')) closeDeckDrawer();
+      else if (!$('shareModal').classList.contains('hidden')) $('shareModal').classList.add('hidden');
+    });
+
+    // 牌堆切换器
+    const dsBtn = $('deckSwitcherBtn'); if (dsBtn) dsBtn.addEventListener('click', openDeckDrawer);
+    const dsBtnM = $('deckSwitcherBtnMobile'); if (dsBtnM) dsBtnM.addEventListener('click', openDeckDrawer);
+    $('deckDrawerClose').addEventListener('click', closeDeckDrawer);
+    $('deckDrawerOverlay').addEventListener('click', closeDeckDrawer);
+    $('manageBtn').addEventListener('click', () => { window.location.href = 'v2-library.html'; });
+
+    // 分享 modal
+    $('shareModalClose').addEventListener('click', () => $('shareModal').classList.add('hidden'));
+    $('shareModalOverlay').addEventListener('click', () => $('shareModal').classList.add('hidden'));
+    $('shareCopyBtn').addEventListener('click', async () => {
+      const url = $('shareUrlInput').value;
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        $('shareUrlInput').select();
+        document.execCommand('copy');
+      }
+      const hint = $('shareCopyHint');
+      hint.classList.remove('hidden');
+      setTimeout(() => hint.classList.add('hidden'), 2000);
+    });
+  }
+
+  // ── 牌堆切换器 ────────────────────────────────────────
+  async function openDeckDrawer() {
+    $('deckDrawer').classList.remove('hidden');
+    await fetchDecksList();
+    renderDeckDrawer();
+  }
+  function closeDeckDrawer() {
+    $('deckDrawer').classList.add('hidden');
+  }
+  function renderDeckDrawer() {
+    const body = $('deckDrawerBody');
+    const { owned = [], seeds = [], system = [] } = state.decksList;
+    const activeId = state.decksList.activeDeckId;
+
+    function row(d, opts = {}) {
+      const isActive = d.id === activeId || d.isActive;
+      const badge = opts.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-tarot-accent text-tarot-muted ml-1">${opts.badge}</span>` : '';
+      return `
+        <div class="deck-row ${isActive ? 'is-active' : ''}" data-deck-id="${escapeAttr(d.id)}" data-kind="${opts.kind}">
+          <div class="deck-row-emoji">${escapeHtml(d.emoji || '📚')}</div>
+          <div class="deck-row-meta">
+            <div class="deck-row-name">${escapeHtml(d.name || '未命名')}${badge}</div>
+            <div class="deck-row-sub">${d.totalCards || 0} 张 · ${escapeHtml((d.description || '').slice(0, 40))}</div>
+          </div>
+          ${isActive ? '<span class="deck-row-tick">●</span>' : ''}
+        </div>
+      `;
+    }
+
+    let html = '';
+    if (owned.length > 0) {
+      html += '<div class="deck-section-title">我的牌堆</div>';
+      html += owned.map(d => row(d, { kind: 'owned' })).join('');
+    }
+    if (system.length > 0) {
+      html += '<div class="deck-section-title mt-3">系统兜底</div>';
+      html += system.map(d => row(d, { kind: 'system-default' })).join('');
+    }
+    if (seeds.length > 0) {
+      html += '<div class="deck-section-title mt-3">示范牌堆 · 可克隆</div>';
+      html += seeds.map(d => row(d, { kind: 'seed', badge: '示范' })).join('');
+    }
+    if (!html) html = '<div class="text-xs text-tarot-muted text-center py-6">没有牌堆——先去新建一个</div>';
+    body.innerHTML = html;
+
+    body.querySelectorAll('.deck-row').forEach(el => {
+      el.addEventListener('click', async () => {
+        const id = el.dataset.deckId;
+        const kind = el.dataset.kind;
+        if (kind === 'seed') {
+          if (!confirm(`将"${el.querySelector('.deck-row-name').textContent.trim()}"克隆为我的牌堆？`)) return;
+          const r = await fetch(`/api/v2/seed-decks/${encodeURIComponent(id)}/clone`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+          if (!r.ok) { alert('克隆失败'); return; }
+          const data = await r.json();
+          await fetch(`/api/v2/decks/${data.deckId}/activate`, { method: 'POST' });
+        } else {
+          const r = await fetch(`/api/v2/decks/${encodeURIComponent(id)}/activate`, { method: 'POST' });
+          if (!r.ok) { alert('切换失败'); return; }
+        }
+        closeDeckDrawer();
+        location.reload();
+      });
     });
   }
 
@@ -286,7 +397,7 @@
       const r = await fetch(`/api/v2/draw/${spread}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question, deckId: state.activeDeck?.id || null })
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || '抽牌失败');
@@ -399,7 +510,8 @@
       const loading = $('cardDetailLoading');
       loading.classList.remove('hidden');
       try {
-        const r = await fetch(`/api/v2/deck/card/${encodeURIComponent(card.id)}`);
+        const deckQ = state.activeDeck?.id ? `?deckId=${encodeURIComponent(state.activeDeck.id)}` : '';
+        const r = await fetch(`/api/v2/deck/card/${encodeURIComponent(card.id)}${deckQ}`);
         if (r.ok) {
           const full = await r.json();
           // 合并到当前抽出的 card 引用，避免重复请求
@@ -551,7 +663,8 @@
           cardIds: dialogueState.cards.map(c => c.id),
           dialogueId: dialogueState.dialogueId,
           transcript: dialogueState.transcript,
-          userQuestion: dialogueState.userQuestion
+          userQuestion: dialogueState.userQuestion,
+          deckId: state.activeDeck?.id || null
         }),
         signal: ctl.signal
       });

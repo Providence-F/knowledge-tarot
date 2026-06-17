@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>克隆牌堆 — 知识塔罗</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { tarot: {
+        bg: '#ffffff', card: '#ffffff', ivory: '#1a1a1a',
+        muted: '#888888', border: '#e5e5e5', accent: '#f5f5f5'
+      }}, fontFamily: { serif: ['Georgia','Noto Serif SC','serif'], sans: ['Inter','Noto Sans SC','system-ui','sans-serif'] } } }
+    }
+  </script>
+</head>
+<body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
+  <header class="border-b border-tarot-border">
+    <div class="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
+      <a href="v2.html" class="flex items-center gap-3 hover:opacity-70 transition">
+        <div class="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center">
+          <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <h1 class="text-lg font-bold tracking-wide">Knowledge Tarot</h1>
+      </a>
+      <a href="v2.html" class="text-sm text-tarot-muted hover:text-black">← 返回抽牌</a>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-12">
+    <div id="loadingState" class="text-center py-16 text-tarot-muted text-sm">加载分享内容…</div>
+
+    <div id="errorState" class="hidden text-center py-12">
+      <div class="text-5xl mb-4">⚠️</div>
+      <h2 class="font-serif text-2xl font-bold mb-3">链接无效</h2>
+      <p id="errorMsg" class="text-tarot-muted text-sm mb-6"></p>
+      <a href="v2.html" class="inline-block px-5 py-2.5 bg-black text-white rounded-lg text-sm hover:bg-tarot-ivory transition">返回主页</a>
+    </div>
+
+    <div id="previewState" class="hidden">
+      <div class="text-center mb-8">
+        <div class="text-xs uppercase tracking-widest text-tarot-muted mb-2">有人分享了一副牌堆给你</div>
+        <div id="deckEmoji" class="text-6xl mb-4"></div>
+        <h2 id="deckName" class="font-serif text-3xl font-bold mb-2"></h2>
+        <p id="deckDesc" class="text-tarot-muted text-sm leading-relaxed max-w-md mx-auto"></p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-8">
+        <div class="border border-tarot-border rounded-xl p-4 text-center">
+          <div id="deckCount" class="font-serif text-3xl font-bold">—</div>
+          <div class="text-xs text-tarot-muted mt-1">张牌</div>
+        </div>
+        <div class="border border-tarot-border rounded-xl p-4 text-center">
+          <div id="deckOwner" class="font-mono text-sm font-bold">—</div>
+          <div class="text-xs text-tarot-muted mt-1">来自身份</div>
+        </div>
+      </div>
+
+      <div class="bg-tarot-accent border border-tarot-border rounded-xl p-4 mb-6 text-xs text-tarot-muted leading-relaxed">
+        点击下方按钮后，这副牌堆会被<strong class="text-black">完整复制</strong>到你的牌库——你拥有独立的副本，原作者之后的修改不会影响你。
+      </div>
+
+      <button id="cloneBtn" class="w-full py-4 bg-black text-white rounded-xl text-base font-medium hover:bg-tarot-ivory transition">
+        克隆到我的牌库
+      </button>
+
+      <div id="cloneStatus" class="hidden mt-4 p-3 rounded-lg text-sm border"></div>
+    </div>
+
+    <div id="successState" class="hidden text-center py-12">
+      <div class="text-5xl mb-4">✓</div>
+      <h2 class="font-serif text-2xl font-bold mb-3">克隆成功</h2>
+      <p class="text-tarot-muted text-sm mb-6">这副牌堆已经在你的牌库中。</p>
+      <a id="goDrawBtn" href="v2.html" class="inline-block px-5 py-2.5 bg-black text-white rounded-lg text-sm hover:bg-tarot-ivory transition">立即抽牌 →</a>
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const token = location.pathname.split('/').filter(Boolean).pop();
+    let previewData = null;
+
+    function show(id) {
+      ['loadingState','errorState','previewState','successState'].forEach(s => {
+        $(s).classList.toggle('hidden', s !== id);
+      });
+    }
+
+    function showError(msg) {
+      $('errorMsg').textContent = msg || '链接已过期或不存在';
+      show('errorState');
+    }
+
+    async function loadPreview() {
+      try {
+        const r = await fetch(`/api/v2/share/${encodeURIComponent(token)}`);
+        if (!r.ok) {
+          const data = await r.json().catch(() => ({}));
+          return showError(data.error || `HTTP ${r.status}`);
+        }
+        const data = await r.json();
+        const p = data.preview || data;
+        previewData = p;
+        $('deckEmoji').textContent = p.emoji || '📚';
+        $('deckName').textContent = p.name || '未命名牌堆';
+        $('deckDesc').textContent = p.description || '';
+        $('deckCount').textContent = p.totalCards || 0;
+        $('deckOwner').textContent = p.ownerIdShort || '——';
+        show('previewState');
+      } catch (e) {
+        showError('网络错误：' + e.message);
+      }
+    }
+
+    async function doClone() {
+      const btn = $('cloneBtn');
+      btn.disabled = true;
+      btn.textContent = '克隆中…';
+      try {
+        const r = await fetch(`/api/v2/share/${encodeURIComponent(token)}/clone`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        if (!r.ok) {
+          const data = await r.json().catch(() => ({}));
+          throw new Error(data.error || `HTTP ${r.status}`);
+        }
+        const data = await r.json();
+        if (data.deckId) {
+          await fetch(`/api/v2/decks/${data.deckId}/activate`, { method: 'POST' }).catch(() => {});
+        }
+        show('successState');
+      } catch (e) {
+        const status = $('cloneStatus');
+        status.className = 'mt-4 p-3 rounded-lg text-sm border border-red-200 bg-red-50 text-red-700';
+        status.textContent = '克隆失败：' + e.message;
+        status.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '重试克隆';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!token || token === 'v2-share-receive.html') {
+        showError('缺少分享 token');
+        return;
+      }
+      $('cloneBtn').addEventListener('click', doClone);
+      loadPreview();
+    });
+  })();
+  </script>
+</body>
+</html>

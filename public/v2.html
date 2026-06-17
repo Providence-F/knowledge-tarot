@@ -145,7 +145,12 @@
         </div>
         <!-- 桌面端右侧栏 -->
         <div class="hidden md:flex items-center gap-3 text-sm">
-          <span id="deckBadge" class="text-xs text-tarot-muted"></span>
+          <button id="deckSwitcherBtn" class="flex items-center gap-2 px-3 py-1.5 border border-tarot-border rounded-lg hover:border-black/40 transition text-xs">
+            <span id="activeDeckEmoji">📚</span>
+            <span id="activeDeckName" class="font-medium text-black truncate max-w-[200px]">加载中…</span>
+            <span id="deckBadge" class="text-tarot-muted"></span>
+            <svg class="w-3.5 h-3.5 text-tarot-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+          </button>
           <span id="userIdBadge" class="hidden text-[10px] text-tarot-muted font-mono px-2 py-0.5 rounded bg-tarot-accent" title="你的牌库身份"></span>
           <select id="styleSelect" class="bg-white border border-tarot-border rounded-lg px-3 py-1.5 text-xs text-tarot-ivory focus:outline-none focus:border-black/40">
             <option value="gentle">温柔陪伴</option>
@@ -156,9 +161,13 @@
           <a href="v2-library.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">我的牌库</a>
           <a href="v2-import.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">导入内容</a>
         </div>
-        <!-- 移动端右侧：deckBadge 简版 + 汉堡 -->
+        <!-- 移动端右侧：deck switcher 简版 + 汉堡 -->
         <div class="flex md:hidden items-center gap-2 shrink-0">
-          <span id="deckBadgeMobile" class="text-[11px] text-tarot-muted"></span>
+          <button id="deckSwitcherBtnMobile" class="flex items-center gap-1 px-2 py-1.5 border border-tarot-border rounded-lg text-[11px]">
+            <span id="activeDeckEmojiMobile">📚</span>
+            <span id="deckBadgeMobile" class="text-tarot-muted"></span>
+            <svg class="w-3 h-3 text-tarot-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+          </button>
           <button id="navToggle" aria-label="菜单" class="w-10 h-10 flex items-center justify-center rounded-lg border border-tarot-border hover:bg-tarot-accent transition">
             <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
@@ -335,6 +344,48 @@
     </div>
   </div>
 
-  <script src="js/v2-app.js"></script>
+  <!-- Deck Switcher Drawer -->
+  <div id="deckDrawer" class="fixed inset-0 z-[55] hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" id="deckDrawerOverlay"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-full md:w-[400px] bg-white border-l border-tarot-border shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-5 py-4 border-b border-tarot-border flex items-center justify-between">
+        <h3 class="font-serif font-bold text-lg text-black">切换牌堆</h3>
+        <button id="deckDrawerClose" class="text-tarot-muted hover:text-black p-1 -m-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="deckDrawerBody" class="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+        <div class="text-xs text-tarot-muted text-center py-6">加载中…</div>
+      </div>
+      <div class="border-t border-tarot-border p-3 grid grid-cols-2 gap-2">
+        <a href="v2-import.html" class="px-3 py-2.5 bg-black text-white rounded-lg text-sm text-center hover:bg-tarot-ivory transition">+ 新建牌堆</a>
+        <button id="manageBtn" class="px-3 py-2.5 border border-tarot-border rounded-lg text-sm text-black hover:bg-tarot-accent transition">管理…</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分享 modal -->
+  <div id="shareModal" class="fixed inset-0 z-[58] hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="shareModalOverlay"></div>
+    <div class="absolute inset-x-3 top-[15vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[20vh] md:w-[480px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-6 py-4 border-b border-tarot-border flex items-center justify-between">
+        <h3 class="font-serif font-bold text-lg text-black">分享这副牌</h3>
+        <button id="shareModalClose" class="text-tarot-muted hover:text-black"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <p class="text-sm text-tarot-muted">把链接发给朋友，对方点开后可以一键克隆为自己的牌堆。30 天内有效。</p>
+        <div>
+          <label class="text-xs text-tarot-muted">分享链接</label>
+          <div class="flex gap-2 mt-1">
+            <input id="shareUrlInput" type="text" readonly class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm text-tarot-ivory font-mono bg-tarot-accent/30">
+            <button id="shareCopyBtn" class="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-tarot-ivory transition">复制</button>
+          </div>
+          <div id="shareCopyHint" class="text-xs text-tarot-muted mt-1 hidden">已复制</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/v2-app.js?v=20260616a"></script>
 </body>
 </html>
