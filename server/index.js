@@ -26,6 +26,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/', (req, res) => {
+  res.redirect(302, '/v2.html');
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/data', express.static(path.join(__dirname, '..', 'data')));
