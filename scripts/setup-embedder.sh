@@ -36,5 +36,6 @@ v = list(m.embed(["test"]))[0]
 print(f"[setup-embedder] model OK, dim={len(list(v))}")
 PY
 
-echo "[setup-embedder] done. To use: PATH=\"$(pwd)/$VENV_DIR/bin:\$PATH\" pm2 restart kt"
-echo "[setup-embedder] (or set PYTHON_BIN in src/embedder.js if needed)"
+echo "[setup-embedder] done. embedder.js will auto-detect $VENV_DIR/bin/python3."
+echo "[setup-embedder] next steps: pm2 restart knowledge-tarot && pm2 logs --lines 20"
+echo "[setup-embedder] override with KT_PYTHON=/path/to/python if needed."

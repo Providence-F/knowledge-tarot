@@ -21,11 +21,23 @@
  */
 
 const { spawn } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
 const WORKER_PATH = path.join(__dirname, '..', 'scripts', 'embedder_worker.py');
-const PYTHON_BIN = process.platform === 'win32' ? 'python' : 'python3';
+
+function resolvePythonBin() {
+  if (process.env.KT_PYTHON) return process.env.KT_PYTHON;
+  const repoRoot = path.join(__dirname, '..');
+  const venvPython = process.platform === 'win32'
+    ? path.join(repoRoot, '.venv-embedder', 'Scripts', 'python.exe')
+    : path.join(repoRoot, '.venv-embedder', 'bin', 'python3');
+  if (fs.existsSync(venvPython)) return venvPython;
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+const PYTHON_BIN = resolvePythonBin();
 const REQUEST_TIMEOUT_MS = 30000;
 const READY_TIMEOUT_MS = 60000;
 const EXPECTED_DIM = 512;
