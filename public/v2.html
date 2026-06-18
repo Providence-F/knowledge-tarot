@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识塔罗</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260618c">
+  <link rel="stylesheet" href="css/style.css?v=20260618d">
   <script>
     tailwind.config = {
       theme: {
@@ -282,37 +282,9 @@
       <section id="cardsArea" class="mb-10 hidden">
         <div id="drawContext" class="max-w-2xl mx-auto mb-6 text-center hidden"></div>
         <div id="drawStatus" class="max-w-2xl mx-auto mb-6 text-center text-sm text-tarot-muted hidden"></div>
-        <div id="cardsContainer" class="flex flex-wrap justify-center gap-6 md:gap-8 mb-10"></div>
+        <div id="cardsContainer" class="grid gap-6 md:gap-8 justify-center mx-auto mb-10"></div>
 
-        <!-- 第一反应 + 可选 AI 介入 -->
-        <div id="reactionSection" class="max-w-3xl mx-auto hidden">
-          <div class="border border-tarot-border rounded-2xl p-6 bg-tarot-card/50">
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
-              </svg>
-              <h3 class="font-bold text-black">看到这张牌的第一反应是什么？</h3>
-            </div>
-            <p class="text-xs text-tarot-muted mb-3">不用想得太完整。冒出来什么写什么——这一步比答案更重要。</p>
-            <textarea id="reactionInput" rows="4" maxlength="800"
-              placeholder="例如：突然想到那年冬天我已经决定要走了，是我自己又给自己续了三年……"
-              class="w-full bg-white border border-tarot-border rounded-xl px-4 py-3 text-sm text-tarot-ivory placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors resize-y"></textarea>
-            <div class="mt-4 flex flex-wrap gap-3 justify-between items-center">
-              <div class="text-xs text-tarot-muted">写完可以直接关掉网页——这是产品成功，不是失败。</div>
-              <div class="flex gap-3">
-                <button id="finishReactionBtn" class="px-5 py-2 rounded-full border border-tarot-border text-sm hover:border-black/40 transition">写完了，今天到此为止</button>
-                <button id="askDeeperBtn" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                  我想再聊聊
-                </button>
-              </div>
-            </div>
-            <!-- AI 接桥（dialogueOpener 输出） -->
-            <div id="aiBridge" class="hidden mt-5 pt-5 border-t border-tarot-border space-y-3 text-sm leading-relaxed"></div>
-          </div>
-        </div>
+        <!-- reactionSection 已重构为 body 级浮窗 #reactionWidget -->
 
         <!-- AI Interpretation（旧 ID 保留以避免脚本崩，但默认隐藏） -->
         <div id="aiSection" class="hidden"></div>
@@ -398,6 +370,53 @@
     </div>
   </div>
 
-  <script src="js/v2-app.js?v=20260618c"></script>
+  <!-- 反应浮窗（抽完牌后右下角） -->
+  <div id="reactionWidget" class="fixed z-[45] hidden bottom-4 right-4 md:bottom-6 md:right-6 left-4 md:left-auto">
+    <!-- 折叠态：圆角按钮 -->
+    <button id="reactionWidgetBtn" class="reaction-widget-button">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
+      </svg>
+      <span class="reaction-widget-button-label">写下第一反应</span>
+    </button>
+    <!-- 展开态：抽屉式面板 -->
+    <div id="reactionWidgetPanel" class="reaction-widget-panel hidden">
+      <div class="reaction-widget-header">
+        <div class="flex items-center gap-2 min-w-0">
+          <svg class="w-5 h-5 text-black shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          </svg>
+          <h3 class="font-bold text-black text-base truncate">看到这张牌的第一反应是什么？</h3>
+        </div>
+        <button id="reactionWidgetClose" class="text-tarot-muted hover:text-black p-1 -m-1 shrink-0" title="收起">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      </div>
+      <div class="reaction-widget-body">
+        <p class="text-xs text-tarot-muted mb-3">不用想得太完整。冒出来什么写什么——这一步比答案更重要。</p>
+        <textarea id="reactionInput" rows="4" maxlength="800"
+          placeholder="例如：突然想到那年冬天我已经决定要走了，是我自己又给自己续了三年……"
+          class="w-full bg-white border border-tarot-border rounded-xl px-4 py-3 text-sm text-tarot-ivory placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors resize-y"></textarea>
+        <div class="mt-4 flex flex-wrap gap-3 justify-between items-center">
+          <div class="text-xs text-tarot-muted">写完可以直接关掉网页——这是产品成功，不是失败。</div>
+          <div class="flex gap-3">
+            <button id="finishReactionBtn" class="px-5 py-2 rounded-full border border-tarot-border text-sm hover:border-black/40 transition">写完了，今天到此为止</button>
+            <button id="askDeeperBtn" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              我想再聊聊
+            </button>
+          </div>
+        </div>
+        <!-- AI 接桥（dialogueOpener 输出） -->
+        <div id="aiBridge" class="hidden mt-5 pt-5 border-t border-tarot-border space-y-3 text-sm leading-relaxed"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/v2-app.js?v=20260618d"></script>
 </body>
 </html>

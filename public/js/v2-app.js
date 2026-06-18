@@ -232,6 +232,10 @@
     $('askDeeperBtn').addEventListener('click', submitReactionAndStartDialogue);
     $('finishReactionBtn').addEventListener('click', finishWithoutAI);
 
+    // 反应浮窗：折叠 ↔ 展开
+    $('reactionWidgetBtn')?.addEventListener('click', expandReactionWidget);
+    $('reactionWidgetClose')?.addEventListener('click', collapseReactionWidget);
+
     // 全局深度对话（在接桥后才生效）
     $('openDialogueBtn')?.addEventListener('click', openGlobalDialogue);
 
@@ -489,9 +493,10 @@
     $('drawStatus').classList.remove('hidden');
     $('drawStatus').textContent = '正在从你过去的笔记里抽出一段…';
     $('cardsContainer').innerHTML = '';
-    $('reactionSection')?.classList.add('hidden');
+    closeReactionWidget();
+    $('reactionWidget')?.classList.add('hidden');
     if ($('aiBridge')) $('aiBridge').innerHTML = '';
-    $('cardsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollIntoViewIfNeeded($('cardsArea'));
 
     try {
       const r = await fetch(`/api/v2/draw/${spread}`, {
@@ -522,10 +527,11 @@
       await sleep(600);
       $('drawStatus').classList.add('hidden');
 
-      // 默认陌生化展示。给用户输入"第一反应"的入口
-      $('reactionSection')?.classList.remove('hidden');
-      $('reactionInput').value = '';
-      $('reactionInput').focus();
+      // 默认陌生化展示。给用户输入"第一反应"的入口（右下浮窗按钮态）
+      $('reactionWidget')?.classList.remove('hidden');
+      collapseReactionWidget();
+      const ri = $('reactionInput');
+      if (ri) ri.value = '';
     } catch (e) {
       $('drawStatus').classList.add('hidden');
       $('drawContext').innerHTML = `<div class="text-red-600 inline-block px-4 py-3 rounded-2xl bg-red-50 border border-red-200">✗ ${escapeHtml(e.message)}</div>`;
@@ -543,6 +549,28 @@
     drawBtn.classList.toggle('opacity-50', busy);
     redrawBtn.classList.toggle('opacity-50', busy);
     drawBtn.querySelector('span').textContent = busy ? '抽牌中…' : '抽牌';
+  }
+
+  // ── 反应浮窗 ──────────────────────────────
+  function expandReactionWidget() {
+    const w = $('reactionWidget');
+    if (!w || w.classList.contains('hidden')) return;
+    $('reactionWidgetBtn')?.classList.add('hidden');
+    $('reactionWidgetPanel')?.classList.remove('hidden');
+    setTimeout(() => $('reactionInput')?.focus({ preventScroll: true }), 50);
+  }
+  function collapseReactionWidget() {
+    $('reactionWidgetBtn')?.classList.remove('hidden');
+    $('reactionWidgetPanel')?.classList.add('hidden');
+  }
+  function closeReactionWidget() {
+    collapseReactionWidget();
+  }
+  function scrollIntoViewIfNeeded(el) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const inView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    if (!inView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function renderDrawContext(question, spread) {
@@ -563,6 +591,13 @@
   function renderCards(cards) {
     const list = $('cardsContainer');
     list.innerHTML = '';
+    // 按卡数设置 grid 列数（彻底消除 flex-wrap 第三张被推到第二行）
+    list.classList.remove('grid-cols-1', 'md:grid-cols-3', 'max-w-fit');
+    if (cards.length >= 3) {
+      list.classList.add('grid-cols-1', 'md:grid-cols-3', 'max-w-fit');
+    } else {
+      list.classList.add('grid-cols-1', 'max-w-fit');
+    }
     cards.forEach((card, idx) => {
       const slot = document.createElement('div');
       slot.className = 'flex flex-col items-center';
