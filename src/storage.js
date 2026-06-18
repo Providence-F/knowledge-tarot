@@ -418,6 +418,50 @@ function getRecentDrawnIds(userId, days = 7, deckId = null) {
   return ids;
 }
 
+function updateHistoryEntry(userId, drawnAt, patch) {
+  const history = getHistory(userId);
+  const idx = history.findIndex(h => h.drawnAt === drawnAt);
+  if (idx < 0) return null;
+  history[idx] = { ...history[idx], ...patch };
+  writeJSON(path.join(userDir(userId), 'history.json'), history);
+  return history[idx];
+}
+
+// ── Feedback (⭐ / 🚫) ───────────────────────────────────
+// data/users/{uid}/feedback.json: { [deckId]: { [cardId]: 'star'|'block' } }
+
+function feedbackPath(userId) {
+  return path.join(userDir(userId), 'feedback.json');
+}
+
+function getUserFeedback(userId, deckId = null) {
+  const all = readJSON(feedbackPath(userId), {});
+  if (!deckId) return all;
+  const m = all[deckId] || {};
+  const stars = new Set();
+  const blocks = new Set();
+  for (const cid of Object.keys(m)) {
+    if (m[cid] === 'star') stars.add(cid);
+    else if (m[cid] === 'block') blocks.add(cid);
+  }
+  return { stars, blocks, raw: m };
+}
+
+function setCardFeedback(userId, deckId, cardId, kind) {
+  if (!deckId || !cardId) return null;
+  const all = readJSON(feedbackPath(userId), {});
+  if (!all[deckId]) all[deckId] = {};
+  if (kind === 'clear' || kind === null) {
+    delete all[deckId][cardId];
+  } else if (kind === 'star' || kind === 'block') {
+    all[deckId][cardId] = kind;
+  } else {
+    return null;
+  }
+  writeJSON(feedbackPath(userId), all);
+  return { deckId, cardId, kind };
+}
+
 // ── Dialogues ───────────────────────────────────────────
 
 function saveDialogue(userId, dialogue) {
@@ -493,8 +537,12 @@ module.exports = {
   getHistory,
   appendHistory,
   removeHistoryEntry,
+  updateHistoryEntry,
   clearHistory,
   getRecentDrawnIds,
+  // feedback
+  getUserFeedback,
+  setCardFeedback,
   // dialogue
   saveDialogue,
   getDialogue,

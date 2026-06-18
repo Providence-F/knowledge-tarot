@@ -35,15 +35,33 @@ const drawEngine = require('../src/draw-engine');
 const ai = require('../src/ai-questioner');
 const embedder = require('../src/embedder');
 
-// 把 question 安静地编码成向量，失败时返回 null（draw-engine 自动降级纯随机）
+// 把 question（string 或 {q1,q2,q3}）安静地编码成向量；失败返回 null
 async function embedQuestionSafely(question) {
-  if (!question || !question.trim()) return null;
+  const text = ai.questionToText(question);
+  if (!text) return null;
   try {
-    return await embedder.embed(question.trim().slice(0, 500));
+    return await embedder.embed(text.slice(0, 500));
   } catch (e) {
     console.error('[draw] embed question failed, falling back to random:', e.message);
     return null;
   }
+}
+
+// 兼容前端传 string 或 {q1,q2,q3} 两种形态
+function normalizeQuestion(raw) {
+  if (raw == null) return null;
+  if (typeof raw === 'string') {
+    const t = raw.trim();
+    return t ? t : null;
+  }
+  if (typeof raw === 'object') {
+    const q1 = (raw.q1 || '').toString().trim().slice(0, 300);
+    const q2 = (raw.q2 || '').toString().trim().slice(0, 300);
+    const q3 = (raw.q3 || '').toString().trim().slice(0, 300);
+    if (!q1 && !q2 && !q3) return null;
+    return { q1, q2, q3 };
+  }
+  return null;
 }
 
 const router = express.Router();
@@ -484,7 +502,7 @@ function pickPool(userId, deckId) {
 }
 
 router.post('/draw/single', express.json(), async (req, res) => {
-  const question = (req.body?.question || '').trim();
+  const question = normalizeQuestion(req.body?.question);
   const deckId = req.body?.deckId || null;
   const profile = storage.getOrCreateUser(req.userId);
   const style = profile.style || 'gentle';
@@ -493,27 +511,49 @@ router.post('/draw/single', express.json(), async (req, res) => {
   if (picked.pool.length === 0) return res.status(400).json({ error: 'Empty deck. Import content first.' });
   const isUntracked = picked.kind !== 'owned';
   const excludeIds = isUntracked ? new Set() : storage.getRecentDrawnIds(req.userId, 7, picked.deckId);
+  const feedback = isUntracked ? null : storage.getUserFeedback(req.userId, picked.deckId);
   const questionEmbedding = await embedQuestionSafely(question);
-  const card = drawEngine.drawSingle(picked.pool, excludeIds, questionEmbedding);
+  const card = drawEngine.drawSingle(picked.pool, excludeIds, questionEmbedding, feedback);
   if (!card) return res.status(500).json({ error: 'Failed to draw' });
-  const [titles, questions] = await Promise.all([
-    ai.nameCards([card], question),
-    ai.askSingle(card, question, style)
-  ]);
-  card.title = titles[0] || card.title || '—';
+
+  // T15: nameCards 接受 question，结果只放响应里，不写回 card.title
+  const titles = await ai.nameCards([card], question);
+  const dynamicTitle = (titles[0] && titles[0].trim()) || '（待命名）';
+
+  let drawnAt = null;
   if (!isUntracked) {
-    storage.appendHistory(req.userId, {
+    const arr = storage.appendHistory(req.userId, {
       spread: 'single',
       question: question || null,
       cardIds: [card.id],
+      cardSnapshots: [{
+        id: card.id,
+        orientation: card.orientation,
+        position: card.position,
+        positionName: card.positionName,
+        dynamicTitle,
+        drawMeta: card._drawMeta || null
+      }],
+      dynamicTitles: [dynamicTitle],
       deckId: picked.deckId
     });
+    drawnAt = arr[0]?.drawnAt || null;
   }
-  res.json({ card, questions, style, isPublic: picked.kind !== 'owned', deckId: picked.deckId, kind: picked.kind });
+  // T14: AI 不主动开口，不返 questions
+  res.json({
+    card,
+    dynamicTitle,
+    style,
+    isPublic: picked.kind !== 'owned',
+    deckId: picked.deckId,
+    kind: picked.kind,
+    drawnAt,
+    recycled: !!card._drawMeta?.recycled
+  });
 });
 
 router.post('/draw/three', express.json(), async (req, res) => {
-  const question = (req.body?.question || '').trim();
+  const question = normalizeQuestion(req.body?.question);
   const deckId = req.body?.deckId || null;
   const profile = storage.getOrCreateUser(req.userId);
   const style = profile.style || 'gentle';
@@ -522,23 +562,42 @@ router.post('/draw/three', express.json(), async (req, res) => {
   if (picked.pool.length < 3) return res.status(400).json({ error: 'Need at least 3 cards in deck.' });
   const isUntracked = picked.kind !== 'owned';
   const excludeIds = isUntracked ? new Set() : storage.getRecentDrawnIds(req.userId, 7, picked.deckId);
+  const feedback = isUntracked ? null : storage.getUserFeedback(req.userId, picked.deckId);
   const questionEmbedding = await embedQuestionSafely(question);
-  const cards = drawEngine.drawThree(picked.pool, excludeIds, questionEmbedding);
+  const cards = drawEngine.drawThree(picked.pool, excludeIds, questionEmbedding, feedback);
   if (cards.length < 3) return res.status(500).json({ error: 'Failed to draw three' });
-  const [titles, narrative] = await Promise.all([
-    ai.nameCards(cards, question),
-    ai.askThree(cards, question, style)
-  ]);
-  cards.forEach((c, i) => { c.title = titles[i] || c.title || '—'; });
+
+  const titles = await ai.nameCards(cards, question);
+  const dynamicTitles = cards.map((c, i) => (titles[i] && titles[i].trim()) || '（待命名）');
+
+  let drawnAt = null;
   if (!isUntracked) {
-    storage.appendHistory(req.userId, {
+    const arr = storage.appendHistory(req.userId, {
       spread: 'three',
       question: question || null,
       cardIds: cards.map(c => c.id),
+      cardSnapshots: cards.map((c, i) => ({
+        id: c.id,
+        orientation: c.orientation,
+        position: c.position,
+        positionName: c.positionName,
+        dynamicTitle: dynamicTitles[i],
+        drawMeta: c._drawMeta || null
+      })),
+      dynamicTitles,
       deckId: picked.deckId
     });
+    drawnAt = arr[0]?.drawnAt || null;
   }
-  res.json({ cards, narrative, style, isPublic: picked.kind !== 'owned', deckId: picked.deckId, kind: picked.kind });
+  res.json({
+    cards,
+    dynamicTitles,
+    style,
+    isPublic: picked.kind !== 'owned',
+    deckId: picked.deckId,
+    kind: picked.kind,
+    drawnAt
+  });
 });
 
 // ── Dialogue ────────────────────────────────────────────
@@ -558,16 +617,75 @@ function validateTranscript(transcript) {
   return { ok: true };
 }
 
+router.post('/dialogue/start', express.json({ limit: '64kb' }), async (req, res) => {
+  // T13/T19: 用户写完"第一反应"后才调用，AI 给一句简短回应或反问
+  const { cardId, dialogueId, userQuestion = '', userReaction = '', deckId = null, drawnAt = null } = req.body || {};
+  if (!cardId) return res.status(400).json({ error: 'cardId required' });
+  if (typeof userReaction !== 'string' || userReaction.length > MAX_TRANSCRIPT_TEXT_LEN) {
+    return res.status(400).json({ error: `userReaction too long (max ${MAX_TRANSCRIPT_TEXT_LEN})` });
+  }
+  const question = normalizeQuestion(userQuestion);
+  const profile = storage.getOrCreateUser(req.userId);
+  const r = resolveDeck(req.userId, deckId);
+  let card = r ? (r.cards || []).find(c => c.id === cardId) : null;
+  if (!card) card = publicDeck.getCardById(cardId);
+  if (!card) {
+    for (const s of seedDecks.listSeedDecks()) {
+      card = seedDecks.getSeedCard(s.id, cardId);
+      if (card) break;
+    }
+  }
+  if (!card) return res.status(403).json({ error: 'Card not accessible' });
+
+  const style = profile.style || 'gentle';
+  const opener = await ai.dialogueOpener(card, question, userReaction, style);
+
+  // 把 userReaction + AI ack 一起落入 history（T18）
+  if (drawnAt && r && r.kind === 'owned') {
+    const entry = storage.getHistory(req.userId).find(h => h.drawnAt === drawnAt);
+    if (entry) {
+      const transcript = entry.transcript || [];
+      if (userReaction && userReaction.trim()) {
+        transcript.push({ role: 'user', text: userReaction.trim().slice(0, MAX_TRANSCRIPT_TEXT_LEN), at: Date.now() });
+      }
+      if (opener.ack || opener.question) {
+        transcript.push({ role: 'ai', text: [opener.ack, opener.question].filter(Boolean).join('\n').trim(), at: Date.now() });
+      }
+      storage.updateHistoryEntry(req.userId, drawnAt, {
+        userReaction: userReaction.trim() || null,
+        aiCallback: opener,
+        transcript
+      });
+    }
+  }
+
+  res.json({ ack: opener.ack, question: opener.question, style, dialogueId: dialogueId || null });
+});
+
 router.post('/dialogue/turn', express.json({ limit: '256kb' }), async (req, res) => {
-  const { cardId, cardIds, dialogueId, transcript = [], userQuestion = '', deckId = null } = req.body || {};
+  const { cardId, cardIds, dialogueId, transcript = [], userQuestion = '', deckId = null, drawnAt = null } = req.body || {};
   const ids = Array.isArray(cardIds) && cardIds.length > 0 ? cardIds : (cardId ? [cardId] : []);
   if (ids.length === 0) return res.status(400).json({ error: 'cardId or cardIds required' });
   if (ids.length > 5) return res.status(400).json({ error: 'too many cards (max 5)' });
-  if (typeof userQuestion !== 'string' || userQuestion.length > MAX_USER_QUESTION_LEN) {
+  if (typeof userQuestion !== 'string' && typeof userQuestion !== 'object') {
+    return res.status(400).json({ error: 'userQuestion invalid' });
+  }
+  if (typeof userQuestion === 'string' && userQuestion.length > MAX_USER_QUESTION_LEN) {
     return res.status(400).json({ error: `userQuestion too long (max ${MAX_USER_QUESTION_LEN})` });
   }
   const v = validateTranscript(transcript);
   if (!v.ok) return res.status(400).json({ error: v.error });
+
+  // T17: 强制收尾 — 已经达到 MAX_AI_TURNS 直接拒绝
+  const aiTurns = ai.countAITurns(transcript);
+  if (aiTurns >= ai.MAX_AI_TURNS) {
+    return res.json({
+      exhausted: true,
+      finalMessage: '今天的对话先到这里。把你刚刚想到的写到 Obsidian 里——下次它会以新的牌回来找你。',
+      style: storage.getOrCreateUser(req.userId).style || 'gentle',
+      dialogueId: dialogueId || null
+    });
+  }
 
   const profile = storage.getOrCreateUser(req.userId);
   const r = resolveDeck(req.userId, deckId);
@@ -586,7 +704,7 @@ router.post('/dialogue/turn', express.json({ limit: '256kb' }), async (req, res)
   }
 
   const style = profile.style || 'gentle';
-  const question = await ai.dialogueTurn(cards, transcript, style, userQuestion);
+  const question = await ai.dialogueTurn(cards, transcript, style, normalizeQuestion(userQuestion));
 
   let savedId = dialogueId;
   const isUntracked = !r || r.kind !== 'owned';
@@ -606,8 +724,27 @@ router.post('/dialogue/turn', express.json({ limit: '256kb' }), async (req, res)
       createdAt: (storage.getDialogue(req.userId, id)?.createdAt) || Date.now()
     });
     savedId = saved.id;
+
+    // 同步追加到 history.transcript（T18）
+    if (drawnAt) {
+      const entry = storage.getHistory(req.userId).find(h => h.drawnAt === drawnAt);
+      if (entry) {
+        const ht = entry.transcript || [];
+        ht.push({ role: 'ai', text: question, at: Date.now() });
+        storage.updateHistoryEntry(req.userId, drawnAt, { transcript: ht });
+      }
+    }
   }
-  res.json({ question, style, dialogueId: savedId || null, isPublic: isUntracked, deckId: r ? r.deckId : null });
+  const turnsUsed = aiTurns + 1;
+  res.json({
+    question,
+    style,
+    dialogueId: savedId || null,
+    isPublic: isUntracked,
+    deckId: r ? r.deckId : null,
+    turnsUsed,
+    turnsRemaining: Math.max(ai.MAX_AI_TURNS - turnsUsed, 0)
+  });
 });
 
 router.get('/dialogues', (req, res) => {
@@ -675,6 +812,42 @@ router.post('/me/import', express.json(), (req, res) => {
     maxAge: 365 * 86400000
   });
   res.json({ ok: true, userId: target });
+});
+
+// ── Feedback (⭐ / 🚫) ───────────────────────────────────
+router.post('/feedback', express.json(), (req, res) => {
+  const { deckId, cardId, kind } = req.body || {};
+  if (!cardId) return res.status(400).json({ error: 'cardId required' });
+  if (!['star', 'block', 'clear'].includes(kind)) return res.status(400).json({ error: 'kind must be star/block/clear' });
+  const r = resolveDeck(req.userId, deckId);
+  if (!r) return res.status(404).json({ error: 'Deck not found' });
+  if (r.kind !== 'owned') return res.status(403).json({ error: '只能对自己的牌堆做反馈' });
+  const result = storage.setCardFeedback(req.userId, r.deckId, cardId, kind);
+  res.json({ ok: true, ...result });
+});
+
+router.get('/feedback', (req, res) => {
+  const deckId = req.query.deckId;
+  if (!deckId) return res.json({ all: storage.getUserFeedback(req.userId) });
+  const r = resolveDeck(req.userId, deckId);
+  if (!r) return res.status(404).json({ error: 'Deck not found' });
+  const fb = storage.getUserFeedback(req.userId, r.deckId);
+  res.json({ deckId: r.deckId, stars: [...fb.stars], blocks: [...fb.blocks] });
+});
+
+// ── Deck 健康度（T23）────────────────────────────────────
+router.get('/decks/:deckId/stats', async (req, res) => {
+  const r = resolveDeck(req.userId, req.params.deckId);
+  if (!r) return res.status(404).json({ error: 'Deck not found' });
+  const sample = (req.query.sampleQuestion || '').toString().trim();
+  let sampleEmbedding = null;
+  if (sample) {
+    try { sampleEmbedding = await embedder.embed(sample.slice(0, 500)); }
+    catch (e) { console.warn('[stats] sample embed failed:', e.message); }
+  }
+  const feedback = r.kind === 'owned' ? storage.getUserFeedback(req.userId, r.deckId) : null;
+  const stats = drawEngine.deckStats(r.cards || [], sampleEmbedding, feedback);
+  res.json({ deckId: r.deckId, kind: r.kind, ...stats });
 });
 
 module.exports = router;
