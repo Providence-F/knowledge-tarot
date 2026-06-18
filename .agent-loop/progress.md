@@ -2,8 +2,8 @@
 
 Last updated: 2026-06-18
 Current phase: Phase 1
-Active task: T04
-Status: Phase 0 complete (T01+T02+T03), starting T04
+Active task: T06
+Status: T01-T05 done, starting T06
 
 ## Phase 0 — 地基
 
@@ -14,7 +14,7 @@ Status: Phase 0 complete (T01+T02+T03), starting T04
 ## Phase 1 — 算法核心
 
 - [x] T04 pipeline-v2 末尾加 embedding 计算
-- [ ] T05 backfill 脚本给存量卡补 embedding
+- [x] T05 backfill 脚本给存量卡补 embedding
 - [ ] T06 cosine > 0.92 去重
 - [ ] T07 反向 RAG 分桶抽样（draw-engine.js）
 - [ ] T08 < 30 张降级到纯随机
