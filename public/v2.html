@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识塔罗</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260618b">
+  <link rel="stylesheet" href="css/style.css?v=20260618c">
   <script>
     tailwind.config = {
       theme: {
@@ -132,7 +132,7 @@
   <header class="border-b border-tarot-border">
     <div class="max-w-6xl mx-auto px-4 py-4 md:py-6">
       <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
+        <a href="v2.html" class="flex items-center gap-3 min-w-0 hover:opacity-70 transition">
           <div class="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shrink-0">
             <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
@@ -142,7 +142,7 @@
             <h1 class="text-lg md:text-xl font-bold text-black tracking-wide truncate">Knowledge Tarot</h1>
             <p class="hidden md:block text-xs text-tarot-muted">知识塔罗 — 你和你过去的内容做自我对话</p>
           </div>
-        </div>
+        </a>
         <!-- 桌面端右侧栏 -->
         <div class="hidden md:flex items-center gap-3 text-sm">
           <button id="deckSwitcherBtn" class="flex items-center gap-2 px-3 py-1.5 border border-tarot-border rounded-lg hover:border-black/40 transition text-xs">
@@ -398,28 +398,6 @@
     </div>
   </div>
 
-  <!-- 分享 modal -->
-  <div id="shareModal" class="fixed inset-0 z-[58] hidden">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="shareModalOverlay"></div>
-    <div class="absolute inset-x-3 top-[15vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:top-[20vh] md:w-[480px] bg-white border border-tarot-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-      <div class="px-6 py-4 border-b border-tarot-border flex items-center justify-between">
-        <h3 class="font-serif font-bold text-lg text-black">分享这副牌</h3>
-        <button id="shareModalClose" class="text-tarot-muted hover:text-black"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
-        <p class="text-sm text-tarot-muted">把链接发给朋友，对方点开后可以一键克隆为自己的牌堆。30 天内有效。</p>
-        <div>
-          <label class="text-xs text-tarot-muted">分享链接</label>
-          <div class="flex gap-2 mt-1">
-            <input id="shareUrlInput" type="text" readonly class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm text-tarot-ivory font-mono bg-tarot-accent/30">
-            <button id="shareCopyBtn" class="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-tarot-ivory transition">复制</button>
-          </div>
-          <div id="shareCopyHint" class="text-xs text-tarot-muted mt-1 hidden">已复制</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/v2-app.js?v=20260618b"></script>
+  <script src="js/v2-app.js?v=20260618c"></script>
 </body>
 </html>

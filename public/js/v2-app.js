@@ -286,7 +286,6 @@
       if (!$('cardDetailModal').classList.contains('hidden')) closeCardDetail();
       else if (!$('dialogueModal').classList.contains('hidden')) closeDialogue();
       else if (!$('deckDrawer').classList.contains('hidden')) closeDeckDrawer();
-      else if (!$('shareModal').classList.contains('hidden')) $('shareModal').classList.add('hidden');
     });
 
     // 牌堆切换器
@@ -295,22 +294,6 @@
     $('deckDrawerClose').addEventListener('click', closeDeckDrawer);
     $('deckDrawerOverlay').addEventListener('click', closeDeckDrawer);
     $('manageBtn').addEventListener('click', () => { window.location.href = 'v2-library.html'; });
-
-    // 分享 modal
-    $('shareModalClose').addEventListener('click', () => $('shareModal').classList.add('hidden'));
-    $('shareModalOverlay').addEventListener('click', () => $('shareModal').classList.add('hidden'));
-    $('shareCopyBtn').addEventListener('click', async () => {
-      const url = $('shareUrlInput').value;
-      try {
-        await navigator.clipboard.writeText(url);
-      } catch {
-        $('shareUrlInput').select();
-        document.execCommand('copy');
-      }
-      const hint = $('shareCopyHint');
-      hint.classList.remove('hidden');
-      setTimeout(() => hint.classList.add('hidden'), 2000);
-    });
   }
 
   // ── 牌堆切换器 ────────────────────────────────────────
@@ -806,6 +789,8 @@
     $('aiBridge').classList.remove('hidden');
     $('aiBridge').innerHTML = `<div class="flex items-center gap-3 text-tarot-muted py-2"><div class="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div><span>过去的你正在说话…</span></div>`;
 
+    const ctl = new AbortController();
+    const timeoutId = setTimeout(() => ctl.abort('timeout'), 60000);
     try {
       const r = await fetch('/api/v2/dialogue/start', {
         method: 'POST',
@@ -816,7 +801,8 @@
           userReaction: reaction,
           deckId: state.activeDeck?.id || null,
           drawnAt: state.currentDrawnAt
-        })
+        }),
+        signal: ctl.signal
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || '接桥失败');
@@ -837,8 +823,12 @@
       state.userReaction = reaction;
       $('openDialogueBtn2')?.addEventListener('click', openGlobalDialogue);
     } catch (e) {
-      $('aiBridge').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(e.message)}</div>`;
+      const msg = e.name === 'AbortError'
+        ? '过去的你这次没接上（60 秒没响应）。可以再点一次"再聊聊"。'
+        : e.message;
+      $('aiBridge').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(msg)}</div>`;
     } finally {
+      clearTimeout(timeoutId);
       askBtn.disabled = false;
       askBtn.classList.remove('opacity-60');
     }
@@ -900,6 +890,8 @@
     if (seed.length === 0) {
       $('dialogueScroll').innerHTML = `<div class="text-tarot-muted text-xs italic text-center py-2">围绕这副牌的对话开始。AI 只问问题，不会给你答案。最多 3 轮。</div>`;
     }
+    // 把 aiBridge 折叠成"对话进行中"的占位，避免 modal 关闭后用户看到两份相同的 AI 开场白
+    $('aiBridge').innerHTML = `<div class="text-xs text-tarot-muted italic py-2">对话进行中…（关闭对话框可继续看牌）</div>`;
     $('dialogueModal').classList.remove('hidden');
     $('dialogueInput').value = '';
     setTimeout(() => $('dialogueScroll').scrollTop = $('dialogueScroll').scrollHeight, 50);
@@ -915,6 +907,7 @@
     if (dialogueAbortController) { dialogueAbortController.abort(); }
     const ctl = new AbortController();
     dialogueAbortController = ctl;
+    const timeoutId = setTimeout(() => ctl.abort('timeout'), 60000);
     appendDialogue('ai', '...', true);
     try {
       const r = await fetch('/api/v2/dialogue/turn', {
@@ -974,6 +967,7 @@
         aiAsk();
       });
     } finally {
+      clearTimeout(timeoutId);
       if (dialogueAbortController === ctl) dialogueAbortController = null;
     }
   }
