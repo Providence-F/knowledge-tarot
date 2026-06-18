@@ -264,7 +264,47 @@
       renderDeckStats();
       renderDeck();
       refreshBadges();
+      loadDeckHealth();
     } catch (e) { console.error(e); }
+  }
+
+  async function loadDeckHealth() {
+    const widget = $('deckHealth');
+    if (!widget) return;
+    const activeId = state.decksList.activeDeckId
+      || [...(state.decksList.owned || [])].find(d => d.isActive)?.id;
+    if (!activeId) { widget.classList.add('hidden'); return; }
+    try {
+      const r = await fetch(`/api/v2/decks/${encodeURIComponent(activeId)}/stats`);
+      if (!r.ok) { widget.classList.add('hidden'); return; }
+      const stats = await r.json();
+      renderDeckHealth(stats);
+    } catch { widget.classList.add('hidden'); }
+  }
+
+  function renderDeckHealth(stats) {
+    const widget = $('deckHealth');
+    if (!stats || stats.total == null) { widget.classList.add('hidden'); return; }
+    const labels = {
+      cold_start: { tag: '冷启动', hint: `还需 ${Math.max(0, 30 - stats.total)} 张才能开启反向 RAG。继续导入。` },
+      early:      { tag: '早期',  hint: `当前 ${stats.total} 张。到 100 张体验最完整。` },
+      sweet:      { tag: '甜蜜区', hint: '当前牌堆规模正合适——重逢密度最高。' },
+      large:      { tag: '大型',  hint: '已超 500 张。考虑按主题拆分新 deck。' },
+      oversized:  { tag: '过大',  hint: '> 1000 张时重逢概率会被稀释。建议拆分。' }
+    };
+    const m = labels[stats.health] || { tag: stats.health, hint: '' };
+    widget.innerHTML = `
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span class="text-black"><b>${stats.total}</b> 张</span>
+        <span>平均 <b>${stats.avgAgeDays}</b> 天</span>
+        <span>90 天+ 老牌 <b>${stats.olderThan90Days}</b> 张（重逢候选）</span>
+        ${stats.starredCount ? `<span>⭐ <b>${stats.starredCount}</b></span>` : ''}
+        ${stats.blockedCount ? `<span>🚫 <b>${stats.blockedCount}</b></span>` : ''}
+        <span class="px-2 py-0.5 rounded bg-black text-white text-[10px]">${m.tag}</span>
+      </div>
+      ${m.hint ? `<div class="mt-1 opacity-80">${m.hint}</div>` : ''}
+    `;
+    widget.classList.remove('hidden');
   }
 
   function renderDeckStats() {

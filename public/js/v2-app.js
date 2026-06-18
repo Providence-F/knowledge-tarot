@@ -20,7 +20,9 @@
     activeDeck: null,            // { id, name, emoji, totalCards, kind }
     activeDeckKind: null,        // 'owned' | 'system-default' | 'seed'
     decksList: { owned: [], seeds: [], system: [] },
-    isDrawing: false
+    isDrawing: false,
+    currentDetailCard: null,     // 当前打开详情的卡（feedback 用）
+    feedbackCache: {}            // { 'deckId|cardId': 'star'|'block'|null }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -46,6 +48,27 @@
       $('emptyState').classList.remove('hidden');
     } else {
       $('drawSection').classList.remove('hidden');
+    }
+    renderDeckStageHint();
+  }
+
+  function renderDeckStageHint() {
+    const hint = $('deckStageHint');
+    if (!hint) return;
+    if (state.activeDeckKind !== 'owned') { hint.classList.add('hidden'); return; }
+    const n = state.deckSize || 0;
+    if (n === 0) { hint.classList.add('hidden'); return; }
+    if (n < 30) {
+      hint.textContent = `你的牌堆才 ${n} 张——重逢感还很弱。先去导入更多过去的笔记，等到 100 张时反向 RAG 才能完整生效。`;
+      hint.classList.remove('hidden');
+    } else if (n < 100) {
+      hint.textContent = `你的牌堆 ${n} 张，再到 100 张体验最完整。`;
+      hint.classList.remove('hidden');
+    } else if (n > 1000) {
+      hint.textContent = `你的牌堆已超 1000 张——重逢概率会被稀释。建议按主题拆分新 deck。`;
+      hint.classList.remove('hidden');
+    } else {
+      hint.classList.add('hidden');
     }
   }
 
@@ -188,10 +211,7 @@
       });
     });
 
-    $('questionInput').addEventListener('input', e => {
-      $('charCount').textContent = e.target.value.length + '/200';
-    });
-    $('questionInput').addEventListener('keydown', e => {
+    $('qInput1').addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -200,21 +220,54 @@
     });
     document.querySelectorAll('.question-example').forEach(btn => {
       btn.addEventListener('click', () => {
-        $('questionInput').value = btn.textContent.trim();
-        $('charCount').textContent = $('questionInput').value.length + '/200';
-        $('questionInput').focus();
+        $('qInput1').value = btn.textContent.trim();
+        $('qInput1').focus();
       });
     });
 
     $('drawBtn').addEventListener('click', handleDraw);
     $('redrawBtn').addEventListener('click', handleDraw);
 
-    // 全局深度对话
-    $('openDialogueBtn').addEventListener('click', openGlobalDialogue);
+    // 第一反应 → 接桥 / 收尾
+    $('askDeeperBtn').addEventListener('click', submitReactionAndStartDialogue);
+    $('finishReactionBtn').addEventListener('click', finishWithoutAI);
+
+    // 全局深度对话（在接桥后才生效）
+    $('openDialogueBtn')?.addEventListener('click', openGlobalDialogue);
 
     // 卡片详情 modal
     $('cardDetailOverlay').addEventListener('click', closeCardDetail);
     $('cardDetailClose').addEventListener('click', closeCardDetail);
+
+    // 反馈按钮（⭐ / 🚫 / 清除）
+    $('cardFeedbackBtns').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-fb]');
+      if (!btn) return;
+      const kind = btn.dataset.fb; // 'star' | 'block' | 'clear'
+      const card = state.currentDetailCard;
+      if (!card || !card.id) return;
+      const deckId = (card._deckId) || state.activeDeck?.id;
+      if (!deckId) {
+        $('cardFeedbackStatus').textContent = '示范牌堆不支持反馈';
+        return;
+      }
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/v2/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deckId, cardId: card.id, kind })
+        });
+        if (!r.ok) throw new Error('feedback failed');
+        const stored = (kind === 'clear') ? null : kind;
+        state.feedbackCache[`${deckId}|${card.id}`] = stored;
+        renderCardFeedbackState(stored);
+      } catch {
+        $('cardFeedbackStatus').textContent = '保存失败';
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     // 深度对话 modal
     $('dialogueOverlay').addEventListener('click', closeDialogue);
@@ -425,11 +478,25 @@
   }
 
   // ── 抽牌 ────────────────────────────────────────────
+  function readQuestionStruct() {
+    const q1 = ($('qInput1')?.value || '').trim().slice(0, 200);
+    const q2 = ($('qInput2')?.value || '').trim().slice(0, 200);
+    const q3 = ($('qInput3')?.value || '').trim().slice(0, 200);
+    if (!q1 && !q2 && !q3) return null;
+    return { q1, q2, q3 };
+  }
+  function questionToText(q) {
+    if (!q) return '';
+    if (typeof q === 'string') return q;
+    return [q.q1 && `想问的：${q.q1}`, q.q2 && `隐约觉得：${q.q2}`, q.q3 && `最害怕：${q.q3}`].filter(Boolean).join(' / ');
+  }
+
   async function handleDraw() {
     if (state.isDrawing) return;
-    const question = $('questionInput').value.trim();
+    const question = readQuestionStruct();
     const spread = state.currentSpread;
     state.currentQuestion = question;
+    state.currentDrawnAt = null;
     state.isDrawing = true;
     setDrawBusy(true);
 
@@ -437,12 +504,10 @@
     $('drawContext').classList.remove('hidden');
     $('drawContext').innerHTML = renderDrawContext(question, spread);
     $('drawStatus').classList.remove('hidden');
-    $('drawStatus').textContent = '正在从当前牌堆里抽牌…';
+    $('drawStatus').textContent = '正在从你过去的笔记里抽出一段…';
     $('cardsContainer').innerHTML = '';
-    $('aiSection').classList.remove('hidden');
-    $('aiContent').innerHTML = '';
-    $('aiLoading').classList.remove('hidden');
-    $('openDialogueBtn').classList.add('hidden');
+    $('reactionSection')?.classList.add('hidden');
+    if ($('aiBridge')) $('aiBridge').innerHTML = '';
     $('cardsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
@@ -455,22 +520,31 @@
       if (!r.ok) throw new Error(data.error || '抽牌失败');
 
       const cards = spread === 'single' ? [data.card] : data.cards;
+      const dynamicTitles = spread === 'single'
+        ? [data.dynamicTitle || '（待命名）']
+        : (data.dynamicTitles || cards.map(() => '（待命名）'));
+      // 只用 dynamicTitle，不污染 card.title
+      cards.forEach((c, i) => {
+        c._dynamicTitle = dynamicTitles[i];
+        c._deckId = state.activeDeck?.id || null;
+      });
       state.currentCards = cards;
+      state.currentDrawnAt = data.drawnAt || null;
 
-      $('drawStatus').textContent = cards.length === 1 ? '牌已经翻开，正在生成向内看的问题…' : '三张牌已经翻开，正在串起它们之间的关系…';
+      $('drawStatus').textContent = data.recycled
+        ? '你最近抽过的卡都已经在你脑子里了——这次允许重逢一张已经见过的。'
+        : '牌已经翻开。先看抽象的标题，原文藏在翻面后。';
       renderCards(cards);
       await sleep(cards.length * 300 + 600);
-
-      $('aiLoading').classList.add('hidden');
-      if (spread === 'single') renderSingleAI(data);
-      else renderThreeAI(data);
       $('drawStatus').classList.add('hidden');
 
-      $('openDialogueBtn').classList.remove('hidden');
+      // 默认陌生化展示。给用户输入"第一反应"的入口
+      $('reactionSection')?.classList.remove('hidden');
+      $('reactionInput').value = '';
+      $('reactionInput').focus();
     } catch (e) {
-      $('aiLoading').classList.add('hidden');
       $('drawStatus').classList.add('hidden');
-      $('aiContent').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(e.message)}</div>`;
+      $('drawContext').innerHTML = `<div class="text-red-600 inline-block px-4 py-3 rounded-2xl bg-red-50 border border-red-200">✗ ${escapeHtml(e.message)}</div>`;
     } finally {
       state.isDrawing = false;
       setDrawBusy(false);
@@ -490,9 +564,10 @@
   function renderDrawContext(question, spread) {
     const deckName = state.activeDeck?.name || '当前牌堆';
     const spreadName = spread === 'three' ? '三牌阵' : '日签';
-    const q = question
-      ? `<div class="text-black font-medium">${escapeHtml(question)}</div>`
-      : `<div class="text-black font-medium">没有具体问题，作为一次随机提醒</div>`;
+    const text = questionToText(question);
+    const q = text
+      ? `<div class="text-black font-medium">${escapeHtml(text)}</div>`
+      : `<div class="text-black font-medium">没有具体问题，作为一次随机重逢</div>`;
     return `
       <div class="inline-block max-w-full px-4 py-3 rounded-2xl bg-white border border-tarot-border text-left">
         <div class="text-[11px] text-tarot-muted mb-1">${escapeHtml(deckName)} · ${spreadName}</div>
@@ -517,6 +592,9 @@
       wrapper.className = 'card-wrapper cursor-pointer';
       wrapper.dataset.cardId = card.id;
       wrapper.title = '点击查看完整内容';
+      const orientationMark = card.orientation === 'reversed'
+        ? `<span class="text-[10px] px-1.5 py-0.5 border border-black/40 rounded text-black/70 ml-2">逆位</span>`
+        : '';
       wrapper.innerHTML = `
         <div class="card-inner">
           <div class="card-face card-back">
@@ -524,17 +602,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
             </svg>
           </div>
-          <div class="card-face card-front suit-${escapeAttr(card.suit)}">
+          <div class="card-face card-front suit-${escapeAttr(card.suit)} ${card.orientation === 'reversed' ? 'rotate-180' : ''}">
             ${card.positionName ? `<div class="position-label">${escapeHtml(card.positionName)}</div>` : ''}
             <div class="flex items-center justify-between mb-3">
-              <span class="text-xs text-tarot-muted">${escapeHtml(card.suitName || '')}</span>
+              <span class="text-xs text-tarot-muted">过去的你${orientationMark}</span>
             </div>
-            <h3 class="font-serif font-bold text-xl text-black mb-3 leading-snug">${escapeHtml(card.title)}</h3>
-            <div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed">
-              ${renderCardBody(card)}
+            <h3 class="font-serif font-bold text-2xl text-black mb-3 leading-snug">${escapeHtml(card._dynamicTitle || card.title || '—')}</h3>
+            <div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed italic">
+              ${renderCardFrontTeaser(card)}
             </div>
             <div class="mt-3 pt-2 text-[11px] text-tarot-muted text-center border-t border-tarot-border">
-              点击查看完整内容
+              翻面看原文 · 来源
             </div>
           </div>
         </div>
@@ -549,6 +627,14 @@
         openCardDetail(card);
       });
     });
+  }
+
+  // 卡正面只展示一行抽象提示，原文 / 来源 / 日期都藏在翻面后（陌生化）
+  function renderCardFrontTeaser(card) {
+    const hint = card.contentType === 'opinion'
+      ? '一句你曾经认同的话'
+      : (card.contentType === 'analysis' ? '一段你过去整理过的判断' : '一段过去的你写过的话');
+    return `<p class="opacity-70 text-center mt-6">${escapeHtml(hint)}</p>`;
   }
 
   function renderCardBody(card) {
@@ -570,6 +656,7 @@
 
   // ── 卡片详情 modal ────────────────────────────────────
   async function openCardDetail(card) {
+    state.currentDetailCard = card;
     $('cardDetailMeta').textContent = [
       card.suitName || '',
       card.positionName || ''
@@ -579,6 +666,9 @@
     $('cardDetailCount').textContent = formatCount(card);
     $('cardDetailModal').classList.remove('hidden');
     setTimeout(() => $('cardDetailBody').scrollTop = 0, 30);
+
+    // 拉取反馈状态
+    loadAndRenderFeedback(card);
 
     // 旧数据没有 fullPassage 时，向后端拉一次完整 card
     if (!card.fullPassage && card.id) {
@@ -606,7 +696,50 @@
   }
 
   function closeCardDetail() {
+    state.currentDetailCard = null;
     $('cardDetailModal').classList.add('hidden');
+  }
+
+  async function loadAndRenderFeedback(card) {
+    const deckId = (card._deckId) || state.activeDeck?.id;
+    if (!deckId || !card.id) {
+      renderCardFeedbackState(null, true);
+      return;
+    }
+    const key = `${deckId}|${card.id}`;
+    if (key in state.feedbackCache) {
+      renderCardFeedbackState(state.feedbackCache[key]);
+      return;
+    }
+    renderCardFeedbackState(null);
+    try {
+      const r = await fetch(`/api/v2/feedback?deckId=${encodeURIComponent(deckId)}`);
+      if (!r.ok) return;
+      const data = await r.json();
+      const map = data.feedback || {};
+      const kind = map[card.id] || null;
+      state.feedbackCache[key] = kind;
+      // 仅当 modal 还在显示同一张卡时刷新
+      if (state.currentDetailCard?.id === card.id) renderCardFeedbackState(kind);
+    } catch {}
+  }
+
+  function renderCardFeedbackState(kind, disabled = false) {
+    const btns = $('cardFeedbackBtns').querySelectorAll('button[data-fb]');
+    btns.forEach(b => {
+      const isActive = (kind === 'star' && b.dataset.fb === 'star') ||
+                       (kind === 'block' && b.dataset.fb === 'block');
+      b.classList.toggle('bg-black', isActive);
+      b.classList.toggle('text-white', isActive);
+      b.classList.toggle('border-black', isActive);
+      b.disabled = disabled;
+      b.style.opacity = disabled ? '0.4' : '';
+    });
+    const status = $('cardFeedbackStatus');
+    if (disabled) status.textContent = '（示范牌堆不支持）';
+    else if (kind === 'star') status.textContent = '已熟悉 → 抽到概率降低';
+    else if (kind === 'block') status.textContent = '已屏蔽 → 不会再抽到';
+    else status.textContent = '';
   }
 
   function renderCardDetailBody(card) {
@@ -654,37 +787,80 @@
     return `${len.toLocaleString()} 字`;
   }
 
-  // ── AI 解读渲染 ─────────────────────────────────────
-  function renderSingleAI(data) {
-    const questions = data.questions || [];
-    const html = `
-      <div class="text-xs text-tarot-muted uppercase tracking-wider mb-2">这张牌先不替你下结论，只把问题推近一点</div>
-      <div class="space-y-3">
-        ${questions.map(q =>
-          `<p class="text-tarot-ivory italic leading-relaxed border-l-2 border-black pl-4">${escapeHtml(q)}</p>`
-        ).join('') || '<p class="text-tarot-muted text-sm">这张牌暂时没有生成问题，可以点开牌面先看原文。</p>'}
-      </div>
-    `;
-    $('aiContent').innerHTML = html;
+  // ── 第一反应 → 接桥 / 收尾 ──────────────────────────
+  async function submitReactionAndStartDialogue() {
+    const reaction = ($('reactionInput').value || '').trim();
+    if (!reaction) {
+      $('reactionInput').focus();
+      $('reactionInput').classList.add('ring-2', 'ring-red-200');
+      setTimeout(() => $('reactionInput').classList.remove('ring-2', 'ring-red-200'), 1200);
+      return;
+    }
+    const cards = state.currentCards || [];
+    if (cards.length === 0) return;
+
+    const askBtn = $('askDeeperBtn');
+    askBtn.disabled = true;
+    askBtn.classList.add('opacity-60');
+    $('aiBridge').classList.remove('hidden');
+    $('aiBridge').innerHTML = `<div class="flex items-center gap-3 text-tarot-muted py-2"><div class="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div><span>过去的你正在说话…</span></div>`;
+
+    try {
+      const r = await fetch('/api/v2/dialogue/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardId: cards[0].id,
+          userQuestion: state.currentQuestion,
+          userReaction: reaction,
+          deckId: state.activeDeck?.id || null,
+          drawnAt: state.currentDrawnAt
+        })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || '接桥失败');
+
+      const ackHtml = data.ack ? `<div class="text-tarot-ivory">${escapeHtml(data.ack)}</div>` : '';
+      const qHtml = data.question
+        ? `<p class="italic leading-relaxed border-l-2 border-black pl-4 text-tarot-ivory">${escapeHtml(data.question)}</p>`
+        : '';
+      const continueBtn = data.question
+        ? `<div class="pt-3 flex justify-end">
+             <button id="openDialogueBtn2" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition">继续这个问题</button>
+           </div>`
+        : '';
+      $('aiBridge').innerHTML = ackHtml + qHtml + continueBtn;
+      // 把第一反应和 AI 接桥写进 dialogueState 作为后续 transcript 起点
+      state.openerAck = data.ack || '';
+      state.openerQuestion = data.question || '';
+      state.userReaction = reaction;
+      $('openDialogueBtn2')?.addEventListener('click', openGlobalDialogue);
+    } catch (e) {
+      $('aiBridge').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(e.message)}</div>`;
+    } finally {
+      askBtn.disabled = false;
+      askBtn.classList.remove('opacity-60');
+    }
   }
 
-  function renderThreeAI(data) {
-    const narr = data.narrative || {};
-    const html = `
-      ${narr.narrative ? `
-        <div>
-          <div class="text-xs text-tarot-muted uppercase tracking-wider mb-2">叙事</div>
-          <p class="text-tarot-ivory leading-relaxed">${escapeHtml(narr.narrative)}</p>
-        </div>
-      ` : ''}
-      ${narr.question ? `
-        <div class="pt-3 border-t border-tarot-border">
-          <div class="text-xs text-tarot-muted uppercase tracking-wider mb-2">向内问</div>
-          <p class="text-tarot-ivory italic leading-relaxed border-l-2 border-black pl-4">${escapeHtml(narr.question)}</p>
-        </div>
-      ` : ''}
-    `;
-    $('aiContent').innerHTML = html || '<p class="text-tarot-muted text-sm">解读为空</p>';
+  function finishWithoutAI() {
+    const reaction = ($('reactionInput').value || '').trim();
+    if (reaction && state.currentDrawnAt) {
+      // 静默落盘 userReaction（不调 LLM）
+      fetch('/api/v2/dialogue/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardId: (state.currentCards || [])[0]?.id,
+          userQuestion: state.currentQuestion,
+          userReaction: reaction,
+          deckId: state.activeDeck?.id || null,
+          drawnAt: state.currentDrawnAt
+        })
+      }).catch(() => {});
+    }
+    $('aiBridge').classList.remove('hidden');
+    $('aiBridge').innerHTML = `<p class="text-tarot-muted italic text-sm">把这个反应也带走。下一次它会以新的牌回来找你。</p>`;
   }
 
   // ── 深度对话（全局，针对当前抽出的所有牌） ──────────
@@ -695,31 +871,38 @@
     const cards = state.currentCards || [];
     if (cards.length === 0) return;
     if (dialogueAbortController) { dialogueAbortController.abort(); dialogueAbortController = null; }
+    // 把第一反应和接桥的 ack/question 灌入 transcript 作为对话起点
+    const seed = [];
+    if (state.userReaction) seed.push({ role: 'user', text: state.userReaction });
+    const aiOpener = [state.openerAck, state.openerQuestion].filter(Boolean).join('\n').trim();
+    if (aiOpener) seed.push({ role: 'ai', text: aiOpener });
     dialogueState = {
       cards,
       dialogueId: null,
-      transcript: [],
-      userQuestion: state.currentQuestion || ''
+      transcript: seed,
+      userQuestion: state.currentQuestion || '',
+      drawnAt: state.currentDrawnAt
     };
 
     const titleText = cards.length === 1
-      ? cards[0].title
-      : cards.map(c => c.title).join(' · ');
+      ? (cards[0]._dynamicTitle || cards[0].title)
+      : cards.map(c => c._dynamicTitle || c.title).join(' · ');
     const metaText = cards.length === 1
-      ? `${cards[0].suitName || ''} · ${cards[0].positionName || '日签'}`
+      ? `过去的你 · ${cards[0].positionName || '日签'}`
       : `三牌阵 · 整体对话`;
 
     $('dialogueCardSuit').textContent = metaText;
     $('dialogueCardTitle').textContent = titleText;
 
-    const opener = state.currentQuestion
-      ? `围绕"${state.currentQuestion}"展开。AI 只问问题，不会给你答案。`
-      : '围绕这副牌的对话开始。AI 只问问题，不会给你答案。';
-    $('dialogueScroll').innerHTML = `<div class="text-tarot-muted text-xs italic text-center py-2">${escapeHtml(opener)}</div>`;
+    $('dialogueScroll').innerHTML = '';
+    seed.forEach(t => appendDialogue(t.role, t.text));
+    if (seed.length === 0) {
+      $('dialogueScroll').innerHTML = `<div class="text-tarot-muted text-xs italic text-center py-2">围绕这副牌的对话开始。AI 只问问题，不会给你答案。最多 3 轮。</div>`;
+    }
     $('dialogueModal').classList.remove('hidden');
     $('dialogueInput').value = '';
-    setTimeout(() => $('dialogueScroll').scrollTop = 0, 50);
-    aiAsk();
+    setTimeout(() => $('dialogueScroll').scrollTop = $('dialogueScroll').scrollHeight, 50);
+    // 不再 auto-aiAsk，等用户先输入下一句
   }
 
   function closeDialogue() {
@@ -741,7 +924,8 @@
           dialogueId: dialogueState.dialogueId,
           transcript: dialogueState.transcript,
           userQuestion: dialogueState.userQuestion,
-          deckId: state.activeDeck?.id || null
+          deckId: state.activeDeck?.id || null,
+          drawnAt: dialogueState.drawnAt || null
         }),
         signal: ctl.signal
       });
@@ -749,10 +933,27 @@
       const data = await r.json();
       removeLoading();
       if (!r.ok) throw new Error(data.error || '对话失败');
+      // T17: 三轮收尾
+      if (data.exhausted) {
+        const node = document.createElement('div');
+        node.className = 'flex justify-center py-3';
+        node.innerHTML = `<div class="max-w-[90%] text-center text-sm text-tarot-muted italic border-t border-tarot-border pt-3">${escapeHtml(data.finalMessage || '今天的对话先到这里。')}</div>`;
+        $('dialogueScroll').appendChild(node);
+        $('dialogueScroll').scrollTop = $('dialogueScroll').scrollHeight;
+        $('dialogueInput').disabled = true;
+        $('dialogueInput').placeholder = '今天到此为止 · 把刚才想到的写到 Obsidian 里';
+        return;
+      }
       const q = data.question || '...';
       if (data.dialogueId) dialogueState.dialogueId = data.dialogueId;
       dialogueState.transcript.push({ role: 'ai', text: q });
       appendDialogue('ai', q);
+      if (typeof data.turnsRemaining === 'number' && data.turnsRemaining === 0) {
+        const tip = document.createElement('div');
+        tip.className = 'flex justify-center pt-1';
+        tip.innerHTML = `<div class="text-[11px] text-tarot-muted italic">最后一轮 — 写完这条之后 AI 不会再问。</div>`;
+        $('dialogueScroll').appendChild(tip);
+      }
     } catch (e) {
       if (e.name === 'AbortError') return;
       removeLoading();

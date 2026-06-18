@@ -218,27 +218,38 @@
 
     <!-- 抽牌主区 -->
     <section id="drawSection" class="hidden">
+      <!-- 牌堆规模引导（T24，<30 张时显示） -->
+      <div id="deckStageHint" class="hidden max-w-2xl mx-auto mb-6 p-3 border border-tarot-border rounded-lg bg-tarot-accent/40 text-xs text-tarot-muted text-center"></div>
       <!-- Intro -->
       <section id="introSection" class="text-center mb-10">
-        <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">带着一个问题抽牌</h2>
+        <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">把困惑写到具体</h2>
         <p class="text-tarot-muted max-w-xl mx-auto">
-          问得越具体，牌越容易击中你。<br>
-          如果只是想听一句提醒，也可以留空。
+          答案在你已经写过、读过、忘了的笔记里。<br>
+          先把困惑分三步说清楚，再让过去的自己回话。
         </p>
       </section>
 
-      <!-- Question Input -->
-      <section class="max-w-2xl mx-auto mb-8">
-        <label class="block text-sm text-tarot-muted mb-2">你现在真正想问的是什么？（可选）</label>
-        <div class="relative">
-          <input id="questionInput" type="text" placeholder="例如：我该不该继续做这个项目？" maxlength="200"
-            class="w-full bg-white border border-tarot-border rounded-xl pl-5 pr-20 py-4 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
-          <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tarot-muted" id="charCount">0/200</div>
+      <!-- Question Input：三步引导 -->
+      <section class="max-w-2xl mx-auto mb-8 space-y-5">
+        <div>
+          <label class="block text-sm text-black font-medium mb-2">1) 你今天真正想问的是什么？</label>
+          <input id="qInput1" type="text" placeholder="例如：我该不该继续做这个项目？" maxlength="200"
+            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我现在卡住的点是什么？</button>
+            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">这段关系真正的问题是什么？</button>
+            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我该把注意力放在哪里？</button>
+          </div>
         </div>
-        <div class="mt-3 flex flex-wrap gap-2 text-xs">
-          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我现在卡住的点是什么？</button>
-          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">这段关系真正的问题是什么？</button>
-          <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我该把注意力放在哪里？</button>
+        <div>
+          <label class="block text-sm text-black font-medium mb-2">2) 你心里隐约觉得答案可能是什么？<span class="text-tarot-muted font-normal text-xs">（可选，让潜在答案先浮出来）</span></label>
+          <input id="qInput2" type="text" placeholder="例如：可能我心里其实知道要放手了" maxlength="200"
+            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
+        </div>
+        <div>
+          <label class="block text-sm text-black font-medium mb-2">3) 你最害怕的答案是什么？<span class="text-tarot-muted font-normal text-xs">（可选，让阻抗也现身）</span></label>
+          <input id="qInput3" type="text" placeholder="例如：怕承认这两年是白费的" maxlength="200"
+            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
         </div>
       </section>
 
@@ -273,28 +284,38 @@
         <div id="drawStatus" class="max-w-2xl mx-auto mb-6 text-center text-sm text-tarot-muted hidden"></div>
         <div id="cardsContainer" class="flex flex-wrap justify-center gap-6 md:gap-8 mb-10"></div>
 
-        <!-- AI Interpretation -->
-        <div id="aiSection" class="max-w-3xl mx-auto hidden">
+        <!-- 第一反应 + 可选 AI 介入 -->
+        <div id="reactionSection" class="max-w-3xl mx-auto hidden">
           <div class="border border-tarot-border rounded-2xl p-6 bg-tarot-card/50">
-            <div class="flex items-center gap-2 mb-4">
+            <div class="flex items-center gap-2 mb-3">
               <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
               </svg>
-              <h3 class="font-bold text-black">向内看</h3>
+              <h3 class="font-bold text-black">看到这张牌的第一反应是什么？</h3>
             </div>
-            <div id="aiContent" class="space-y-4 text-sm leading-relaxed"></div>
-            <div id="aiLoading" class="hidden flex items-center gap-3 text-tarot-muted py-4">
-              <div class="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-              <span>正在感受你的牌阵...</span>
+            <p class="text-xs text-tarot-muted mb-3">不用想得太完整。冒出来什么写什么——这一步比答案更重要。</p>
+            <textarea id="reactionInput" rows="4" maxlength="800"
+              placeholder="例如：突然想到那年冬天我已经决定要走了，是我自己又给自己续了三年……"
+              class="w-full bg-white border border-tarot-border rounded-xl px-4 py-3 text-sm text-tarot-ivory placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors resize-y"></textarea>
+            <div class="mt-4 flex flex-wrap gap-3 justify-between items-center">
+              <div class="text-xs text-tarot-muted">写完可以直接关掉网页——这是产品成功，不是失败。</div>
+              <div class="flex gap-3">
+                <button id="finishReactionBtn" class="px-5 py-2 rounded-full border border-tarot-border text-sm hover:border-black/40 transition">写完了，今天到此为止</button>
+                <button id="askDeeperBtn" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  我想再聊聊
+                </button>
+              </div>
             </div>
-            <div class="mt-5 pt-5 border-t border-tarot-border flex justify-center">
-              <button id="openDialogueBtn" class="hidden px-6 py-2.5 bg-black text-white rounded-full text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                深度对话
-              </button>
-            </div>
+            <!-- AI 接桥（dialogueOpener 输出） -->
+            <div id="aiBridge" class="hidden mt-5 pt-5 border-t border-tarot-border space-y-3 text-sm leading-relaxed"></div>
           </div>
         </div>
+
+        <!-- AI Interpretation（旧 ID 保留以避免脚本崩，但默认隐藏） -->
+        <div id="aiSection" class="hidden"></div>
 
         <!-- Re-draw -->
         <div class="flex justify-center mt-8">
@@ -323,8 +344,14 @@
         </button>
       </div>
       <div id="cardDetailBody" class="flex-1 overflow-y-auto px-7 py-6 card-detail-body"></div>
-      <div class="px-7 py-3 border-t border-tarot-border text-[11px] text-tarot-muted flex items-center justify-between">
+      <div class="px-7 py-3 border-t border-tarot-border text-[11px] text-tarot-muted flex items-center justify-between gap-3">
         <span id="cardDetailCount"></span>
+        <div class="flex items-center gap-2" id="cardFeedbackBtns">
+          <button data-fb="star" class="px-2.5 py-1 rounded border border-tarot-border hover:border-black/40 transition" title="标⭐：这张降权（已熟悉）">⭐ 已熟悉</button>
+          <button data-fb="block" class="px-2.5 py-1 rounded border border-tarot-border hover:border-black/40 transition" title="🚫：这张不再抽到">🚫 屏蔽</button>
+          <button data-fb="clear" class="px-2.5 py-1 rounded border border-tarot-border hover:border-black/40 transition" title="清除标记">清除</button>
+          <span id="cardFeedbackStatus" class="ml-1"></span>
+        </div>
         <span class="opacity-60">Esc 关闭</span>
       </div>
     </div>
