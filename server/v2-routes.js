@@ -33,6 +33,18 @@ const chatgpt = require('../src/adapters/chatgpt');
 const deepseek = require('../src/adapters/deepseek');
 const drawEngine = require('../src/draw-engine');
 const ai = require('../src/ai-questioner');
+const embedder = require('../src/embedder');
+
+// 把 question 安静地编码成向量，失败时返回 null（draw-engine 自动降级纯随机）
+async function embedQuestionSafely(question) {
+  if (!question || !question.trim()) return null;
+  try {
+    return await embedder.embed(question.trim().slice(0, 500));
+  } catch (e) {
+    console.error('[draw] embed question failed, falling back to random:', e.message);
+    return null;
+  }
+}
 
 const router = express.Router();
 router.use(cookieParser());
@@ -481,7 +493,8 @@ router.post('/draw/single', express.json(), async (req, res) => {
   if (picked.pool.length === 0) return res.status(400).json({ error: 'Empty deck. Import content first.' });
   const isUntracked = picked.kind !== 'owned';
   const excludeIds = isUntracked ? new Set() : storage.getRecentDrawnIds(req.userId, 7, picked.deckId);
-  const card = drawEngine.drawSingle(picked.pool, excludeIds);
+  const questionEmbedding = await embedQuestionSafely(question);
+  const card = drawEngine.drawSingle(picked.pool, excludeIds, questionEmbedding);
   if (!card) return res.status(500).json({ error: 'Failed to draw' });
   const [titles, questions] = await Promise.all([
     ai.nameCards([card], question),
@@ -509,7 +522,8 @@ router.post('/draw/three', express.json(), async (req, res) => {
   if (picked.pool.length < 3) return res.status(400).json({ error: 'Need at least 3 cards in deck.' });
   const isUntracked = picked.kind !== 'owned';
   const excludeIds = isUntracked ? new Set() : storage.getRecentDrawnIds(req.userId, 7, picked.deckId);
-  const cards = drawEngine.drawThree(picked.pool, excludeIds);
+  const questionEmbedding = await embedQuestionSafely(question);
+  const cards = drawEngine.drawThree(picked.pool, excludeIds, questionEmbedding);
   if (cards.length < 3) return res.status(500).json({ error: 'Failed to draw three' });
   const [titles, narrative] = await Promise.all([
     ai.nameCards(cards, question),

@@ -1,9 +1,9 @@
 # Knowledge Tarot v2.0 "重逢之书" Migration Progress
 
 Last updated: 2026-06-18
-Current phase: Phase 1
-Active task: T07
-Status: T01-T06 done, starting T07 反向 RAG
+Current phase: Phase 2
+Active task: T10
+Status: Phase 1 complete (T01-T09), starting Phase 2 交互形态
 
 ## Phase 0 — 地基
 
@@ -16,9 +16,9 @@ Status: T01-T06 done, starting T07 反向 RAG
 - [x] T04 pipeline-v2 末尾加 embedding 计算
 - [x] T05 backfill 脚本给存量卡补 embedding
 - [x] T06 cosine > 0.92 去重
-- [ ] T07 反向 RAG 分桶抽样（draw-engine.js）
-- [ ] T08 < 30 张降级到纯随机
-- [ ] T09 跨时间偏权（90 天+ 老卡 2x）
+- [x] T07 反向 RAG 分桶抽样（draw-engine.js）
+- [x] T08 < 30 张降级到纯随机
+- [x] T09 跨时间偏权（90 天+ 老卡 2x）
 
 ## Phase 2 — 交互形态
 
@@ -58,3 +58,4 @@ Status: T01-T06 done, starting T07 反向 RAG
 - 2026-06-18: T03 决策：orientation 不入 card schema（draw-time 决定，落 history）。Migration 仅加 schemaVersion=2 + embedding: null，幂等。16 deck / 2082 卡迁移成功
 - 2026-06-18: T05：用户 deck embedding 不入 git；公共 + seed deck 部署后 ssh 跑 backfill 自动补
 - 2026-06-18: T06：cosine 去重放在 storage.appendCards，阈值 0.92。验证：sim=0.98 文本对成功去重，sim=0.31 不去重。res 多返 `deduped` 字段
+- 2026-06-18: T07-T09：draw-engine 反向 RAG，0.4-0.7 sweet 70% / 0.2-0.4 surprise 30%。验证 1000 次抽样 720/280 落在预期。降级条件：< 30 张 / 没 question / 两桶都空。90 天+ 老卡 2x 加权（5000 次抽样 ratio 1.94）。v2-routes 调 embedder.embed(question) 失败时降级，不阻塞用户
