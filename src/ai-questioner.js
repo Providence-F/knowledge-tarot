@@ -1,10 +1,13 @@
 /**
- * src/ai-questioner.js — 运行时 LLM：起牌名 + AI 提问
+ * src/ai-questioner.js — 运行时 LLM
  *
- * 三种调用：
- *   1. nameCards(cards, question, style) - 给一批牌起牌名（5-10 字）
- *   2. askSingle(card, question, style)   - 单牌反思的 1-3 个问题
- *   3. askThree(cards, question, style)   - 三牌阵叙事 + 反问
+ * 知识塔罗 v2.0：从"OH 卡治疗师"风格改成"安静的旁观者"。
+ *
+ * 调用：
+ *   1. nameCards(cards, question, style)   - 给一批牌起 dynamicTitle（5-10 字）
+ *   2. dialogueOpener(card, question, userReaction, style)  - 用户写完反应后 AI 的"接桥"
+ *   3. dialogueTurn(card, transcript, style, userQuestion)  - 后续轮的 AI 提问（最多 3 轮）
+ *   4. askSingle / askThree                 - 兼容老路径，现在仅在前端兜底（默认不再调）
  *
  * 风格 style: gentle | sharp | philosophical | playful
  */
@@ -22,29 +25,43 @@ const STYLE_GUIDE = {
 但不油腻、不油滑。幽默是为了松一下，不是为了炫。`
 };
 
-const COMMON_BAN = `**风格底线（绝对不能违反）**：
+const COMMON_BAN = `**底线（绝对不能违反）**：
 - 不要解读这张牌
 - 不要给建议（"或许""可以试试""不妨"）
 - 不要总结
 - 不要鸡汤（"加油""你已经很棒了""一切都会好的""愿你"）
 - 不要"根据这张牌……" / "这张牌告诉我们……"
-- 不要刻意、虚伪、塑料感
-- 永远在和用户聊天，不在分析
+- 不要复述卡的原文细节，让用户自己去读
+- 永远在和用户聊天，不在分析`;
 
-可以一针见血、可以温柔关怀，但绝对不能假。`;
+// 把 question 兼容两种形态：string 或 {q1,q2,q3}
+function questionToText(question) {
+  if (!question) return '';
+  if (typeof question === 'string') return question.trim();
+  if (typeof question === 'object') {
+    const { q1, q2, q3 } = question;
+    const parts = [];
+    if (q1) parts.push(`今天想问的：${q1}`);
+    if (q2) parts.push(`隐约觉得答案：${q2}`);
+    if (q3) parts.push(`最害怕的答案：${q3}`);
+    return parts.join('\n');
+  }
+  return '';
+}
 
 // ── 起牌名 ────────────────────────────────────────────────
 
-const NAME_SYS = `你正在为刚翻开的塔罗牌起名（5-10 字）。
+const NAME_SYS = `你正在为刚翻开的塔罗牌起 dynamicTitle（5-10 字）。
 
 要求：
 - 必须从这张牌的具体内容（不是抽象主题）出发
 - 像一个判断或观察，不像鸡汤
 - 有画面感，有锋利度
+- 如果用户有提问，让标题在"卡内容"和"提问"之间架一座桥（但不要直接回答问题）
 - 禁止模板：xx之x、被忽视的xx、看不见的xx、还没说出口、不能说的xx
 - 禁止"光""旅程""方向""智慧""能量"等空洞大词
 
-只输出 JSON：{"titles": ["第一张牌的牌名", "第二张牌的牌名", ...]}（数组顺序对应输入）`;
+只输出 JSON：{"titles": ["第一张牌名", "第二张牌名", ...]}（数组顺序对应输入）`;
 
 async function nameCards(cards, question) {
   if (!cards || cards.length === 0) return [];
@@ -52,7 +69,7 @@ async function nameCards(cards, question) {
   try {
     const result = await callJSON(NAME_SYS, userMsg, {
       maxTokens: 400,
-      temperature: 0.7  // 起名鼓励多样性
+      temperature: 0.7
     });
     if (Array.isArray(result.titles)) {
       return result.titles.map(t => String(t || '').trim().slice(0, 30));
@@ -60,131 +77,101 @@ async function nameCards(cards, question) {
   } catch (e) {
     console.error('[nameCards] error:', e.message);
   }
-  // 兜底：用 summary 前 10 字 / passage 前 10 字
-  return cards.map(c => (c.summary || c.passage || c.title || '').slice(0, 10) || '—');
+  // 兜底：不再用 summary 前 10 字（破坏陌生化），用占位词
+  return cards.map(() => '（待命名）');
 }
 
 function buildNameUserMsg(cards, question) {
-  let s = question
-    ? `用户的问题：${question}\n\n`
+  const qText = questionToText(question);
+  let s = qText
+    ? `用户的提问：\n${qText}\n\n`
     : `（用户没有提问，直接抽牌）\n\n`;
   s += `${cards.length} 张牌：\n\n`;
   cards.forEach((c, i) => {
     const body = c.contentType === 'analysis'
       ? (c.summary + (c.insights ? '\n要点：' + c.insights.join('；') : ''))
       : (c.passage || c.summary || c.title);
-    s += `第 ${i + 1} 张${c.positionName ? `（${c.positionName}）` : ''}：\n${body.slice(0, 500)}\n\n`;
+    s += `第 ${i + 1} 张${c.positionName ? `（${c.positionName}）` : ''}${c.orientation === 'reversed' ? '【逆位】' : ''}：\n${(body || '').slice(0, 500)}\n\n`;
   });
-  s += `请按顺序为每张牌起一个 5-10 字的牌名。`;
+  s += `请按顺序为每张牌起一个 5-10 字的 dynamicTitle。`;
   return s;
 }
 
-// ── 单牌反思 ──────────────────────────────────────────────
+// ── 安静的旁观者：用户写完反应后的"接桥" ──────────────────
 
-function buildSingleSys(style) {
+function buildOpenerSys(style) {
   const guide = STYLE_GUIDE[style] || STYLE_GUIDE.gentle;
-  return `你是一个会提问的陪伴者，像 OH 卡治疗师那样工作。
-你不解读牌、不给建议、不总结——你只问问题，让用户向内看。
+  return `你是一个"安静的旁观者"。
+
+用户带着 ta 当下的困惑来。我们随机抽出了一段 ta 自己过去写下的话
+（或 ta 曾经收藏认同的话）。ta 大概率已经忘了写过/读过这段。
+ta 已经看到这张牌了，并写下了"第一反应"。
+
+你的任务非常克制：
+- 如果用户的反应已经把"过去的自己"和"当下的问题"接上了 → 只说一句简短的肯定（< 30 字），不要画蛇添足
+- 如果用户卡住、写得很短、明显在回避 → 抛一个尖锐但具体的问题，让 ta 自己往下想
+- 永远不要替 ta 总结、给建议、长篇大论
 
 ${guide}
 
 ${COMMON_BAN}
 
-抛出 1-3 个问题。每个问题独立成行。
+输出两个字段：
+- ack：一句简短的回应或肯定（< 30 字，可以为空字符串）
+- question：一个具体的反问（如果用户已说透，可以为空字符串）
 
-只输出 JSON：{"questions": ["问题1", "问题2", "问题3"]}`;
+至少有一项非空。如果用户已经接上桥，仅给 ack；如果卡住，仅给 question。
+
+只输出 JSON：{"ack": "...", "question": "..."}`;
 }
 
-async function askSingle(card, question, style = 'gentle') {
+async function dialogueOpener(card, question, userReaction, style = 'gentle') {
   const cardBody = card.contentType === 'analysis'
-    ? `核心：${card.summary}\n\n要点：${(card.insights || []).join('；')}`
-    : (card.passage || card.summary || card.title);
+    ? `核心：${card.summary || ''}\n要点：${(card.insights || []).join('；')}`
+    : (card.passage || card.summary || card.title || '');
 
-  const userMsg = (question
-    ? `用户的问题：${question}\n\n`
-    : `（用户没有提问，直接抽到了这张牌）\n\n`
-  ) + `这张牌的内容：\n${cardBody.slice(0, 1200)}`;
+  const qText = questionToText(question);
+  const orient = card.orientation === 'reversed' ? '【逆位 · 提问角度更尖锐】' : '';
+
+  const userMsg = (qText ? `用户的提问：\n${qText}\n\n` : '（用户没有提问）\n\n')
+    + `这张牌${orient}：\n${cardBody.slice(0, 1200)}\n\n`
+    + `用户看到这张牌后的第一反应：\n${(userReaction || '（用户没有写下反应）').slice(0, 800)}`;
 
   try {
-    const result = await callJSON(buildSingleSys(style), userMsg, {
-      maxTokens: 500,
+    const result = await callJSON(buildOpenerSys(style), userMsg, {
+      maxTokens: 300,
       temperature: 0.7
     });
-    if (Array.isArray(result.questions) && result.questions.length > 0) {
-      return result.questions.map(q => String(q).trim()).filter(Boolean).slice(0, 3);
-    }
+    const ack = typeof result.ack === 'string' ? result.ack.trim().slice(0, 80) : '';
+    const q = typeof result.question === 'string' ? result.question.trim().slice(0, 200) : '';
+    if (ack || q) return { ack, question: q };
   } catch (e) {
-    console.error('[askSingle] error:', e.message);
+    console.error('[dialogueOpener] error:', e.message);
   }
-  return ['这张牌让你想到什么？'];
+  return { ack: '', question: '这段过去的你，跟现在的你之间，藏着什么你已经忘了的连接？' };
 }
 
-// ── 三牌阵 ────────────────────────────────────────────────
+// ── 后续轮：每轮一个尖锐问题，最多 3 轮 ──────────────────
 
-function buildThreeSys(style) {
-  const guide = STYLE_GUIDE[style] || STYLE_GUIDE.gentle;
-  return `你是一个会编织叙事的陪伴者。三张牌被放在过去、现在、未来三个位置。
-你不在预测，也不在解读。你在帮用户把碎片串起来看。
-
-${guide}
-
-${COMMON_BAN}
-
-输出两部分：
-- narrative：把三张牌串成一个简短的情境（不是解读，是想象一个画面），3-5 句话
-- question：一个尖锐的反问，戳到用户问题的根本
-
-只输出 JSON：{"narrative": "...", "question": "..."}`;
-}
-
-async function askThree(cards, question, style = 'gentle') {
-  const userMsg = buildThreeUserMsg(cards, question);
-  try {
-    const result = await callJSON(buildThreeSys(style), userMsg, {
-      maxTokens: 800,
-      temperature: 0.7
-    });
-    return {
-      narrative: typeof result.narrative === 'string' ? result.narrative.trim() : '',
-      question: typeof result.question === 'string' ? result.question.trim() : ''
-    };
-  } catch (e) {
-    console.error('[askThree] error:', e.message);
-    return { narrative: '', question: '' };
-  }
-}
-
-function buildThreeUserMsg(cards, question) {
-  let s = question
-    ? `用户的问题：${question}\n\n`
-    : `（用户没有提问，直接抽到了这三张牌）\n\n`;
-  s += `三张牌：\n\n`;
-  cards.forEach(c => {
-    const body = c.contentType === 'analysis'
-      ? (c.summary + (c.insights ? '\n要点：' + c.insights.join('；') : ''))
-      : (c.passage || c.summary || c.title);
-    s += `【${c.positionName}】牌名：${c.title || '（待命名）'}\n内容：${body.slice(0, 600)}\n\n`;
-  });
-  return s;
-}
-
-// ── 深度对话单轮 ──────────────────────────────────────────
+const MAX_AI_TURNS = 3;
 
 function buildDialogueSys(style) {
   const guide = STYLE_GUIDE[style] || STYLE_GUIDE.gentle;
-  return `你是一个用苏格拉底式提问的陪伴者。围绕一张或几张牌，与用户深度对话。
-不告诉用户答案，只通过问题让 ta 自己想出来。每轮只问一个问题。
+  return `你是一个"安静的旁观者"，不是话痨陪聊师。
+
+围绕一段过去的自己写下的话（或曾经认同的话），与用户深度对话。
+不告诉答案，只通过具体问题让 ta 自己看到连接。
 
 ${guide}
 
 ${COMMON_BAN}
 
 对话规则：
-- 每轮只问一个问题，不要"or"，不要罗列
+- 每轮只问一个问题，不要 "or"、不要罗列
 - 顺着用户上轮回答深挖，不要跳话题
-- 用户回避时不戳破，换个角度再问
-- 用户卡住时给一个具体的小切口（"上次让你这样想的时候是什么时候？"）
-- 如果有多张牌，把它们当成一个整体情境，不要分开解读
+- 用户回避时不戳破，换角度再问
+- 用户卡住时给一个具体小切口（"上次让你这样想的时候是什么时候？"）
+- 用户读完后能关掉网页去思考——这是成功，不是失败
 
 只输出 JSON：{"question": "你下一个问题"}`;
 }
@@ -196,34 +183,14 @@ function cardBodyText(card) {
   return card.passage || card.summary || card.title || '';
 }
 
-const FALLBACK_OPENERS = [
-  '让你这样写下来的那一刻，发生了什么？',
-  '看到这张牌出现在面前，你身体先有反应还是脑子先有反应？',
-  '你写下这段话的时候，是想给谁看？',
-  '如果这张牌是过去的你寄给现在的你的一封信，开头第一句你会读出来吗？',
-  '这段文字里你最想绕开的是哪一句？',
-  '现在让你最不想回答的那个问题，其实是什么？'
-];
-
-function pickFallbackOpener(userQuestion) {
-  if (userQuestion && userQuestion.trim()) {
-    return `你刚才问"${userQuestion.trim()}"——这个问题里，最让你卡住的部分是什么？`;
-  }
-  return FALLBACK_OPENERS[Math.floor(Math.random() * FALLBACK_OPENERS.length)];
-}
-
 async function dialogueTurn(cardOrCards, transcript, style = 'gentle', userQuestion = '') {
   const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
-
-  // 首轮且没有用户输入 → 直接走保底，不烧 LLM
-  if ((!transcript || transcript.length === 0) && cards.length > 0) {
-    // 仍然走 LLM 拿一个针对内容的开场，但失败兜底
-  }
+  const qText = questionToText(userQuestion);
 
   const cardsBlock = cards.map((c, i) => {
     const head = cards.length > 1
-      ? `【第 ${i + 1} 张${c.positionName ? ' · ' + c.positionName : ''}】牌名：${c.title || '—'}`
-      : `牌名：${c.title || '—'}`;
+      ? `【第 ${i + 1} 张${c.positionName ? ' · ' + c.positionName : ''}${c.orientation === 'reversed' ? ' · 逆位' : ''}】牌名：${c.title || '—'}`
+      : `牌名：${c.title || '—'}${c.orientation === 'reversed' ? '（逆位）' : ''}`;
     return `${head}\n${cardBodyText(c).slice(0, 600)}`;
   }).join('\n\n');
 
@@ -231,8 +198,8 @@ async function dialogueTurn(cardOrCards, transcript, style = 'gentle', userQuest
     `${t.role === 'ai' ? 'AI' : '用户'}：${t.text}`
   ).join('\n');
 
-  const userMsg = (userQuestion ? `用户最初的问题：${userQuestion}\n\n` : '')
-    + `牌：\n${cardsBlock}\n\n对话记录：\n${transcriptText || '（这是对话开始，请抛出第一个问题——可以贴近用户最初的问题，也可以从牌内容切入）'}`;
+  const userMsg = (qText ? `用户最初的提问：\n${qText}\n\n` : '')
+    + `牌：\n${cardsBlock}\n\n对话记录：\n${transcriptText || '（这是对话开始，请抛出第一个问题——从这张过去的话切入）'}`;
 
   try {
     const result = await callJSON(buildDialogueSys(style), userMsg, {
@@ -245,7 +212,32 @@ async function dialogueTurn(cardOrCards, transcript, style = 'gentle', userQuest
   } catch (e) {
     console.error('[dialogueTurn] error:', e.message);
   }
-  return pickFallbackOpener(userQuestion);
+  return '过去的你已经回答过现在的你了，你听到了吗？';
 }
 
-module.exports = { nameCards, askSingle, askThree, dialogueTurn, FALLBACK_OPENERS };
+function countAITurns(transcript) {
+  if (!Array.isArray(transcript)) return 0;
+  return transcript.filter(t => t && t.role === 'ai').length;
+}
+
+// ── 兼容旧调用（v2.html 老前端可能仍在调） ────────────────
+
+async function askSingle(card, question, style = 'gentle') {
+  // 不再主动抛 3 个问题——返回空数组，让前端走"用户先写第一反应"的新流程
+  return [];
+}
+
+async function askThree(cards, question, style = 'gentle') {
+  return { narrative: '', question: '' };
+}
+
+module.exports = {
+  nameCards,
+  dialogueOpener,
+  dialogueTurn,
+  askSingle,
+  askThree,
+  countAITurns,
+  questionToText,
+  MAX_AI_TURNS
+};
