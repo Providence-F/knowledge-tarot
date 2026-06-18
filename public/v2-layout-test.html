@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>v2 layout test</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260618d">
+  <link rel="stylesheet" href="css/style.css?v=20260618f">
   <script>
     tailwind.config = {
       theme: { extend: { colors: { tarot: {
@@ -60,11 +60,12 @@
       }
       const w = document.createElement('div');
       w.className = 'card-wrapper';
+      const isRev = (i === 1);
       w.innerHTML = `
         <div class="card-inner" style="transform: rotateY(180deg)">
-          <div class="card-face card-front">
+          <div class="card-face card-front${isRev ? ' is-reversed' : ''}">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-xs text-tarot-muted">过去的你</span>
+              <span class="text-xs text-tarot-muted">过去的你${isRev ? '<span class="text-[10px] px-1.5 py-0.5 border border-black/40 rounded text-black/70 ml-2">逆位</span>' : ''}</span>
             </div>
             <h3 class="font-serif font-bold text-2xl text-black mb-3 leading-snug">${titles[i] || '示例标题'}</h3>
             <div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed italic">这里是一段陌生化的提示，不会暴露原文。</div>
