@@ -83,10 +83,19 @@ function hashId(...parts) {
   return Math.abs(h).toString(36);
 }
 
+// embeddings 已 L2 归一化 → cosine = dot product
+function cosineSimilarity(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return 0;
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+
 module.exports = {
   parseFrontmatter,
   cleanForDisplay,
   truncateAtBoundary,
   extractWikilinks,
-  hashId
+  hashId,
+  cosineSimilarity
 };

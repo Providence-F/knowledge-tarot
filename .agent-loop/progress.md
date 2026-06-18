@@ -2,8 +2,8 @@
 
 Last updated: 2026-06-18
 Current phase: Phase 1
-Active task: T06
-Status: T01-T05 done, starting T06
+Active task: T07
+Status: T01-T06 done, starting T07 反向 RAG
 
 ## Phase 0 — 地基
 
@@ -15,7 +15,7 @@ Status: T01-T05 done, starting T06
 
 - [x] T04 pipeline-v2 末尾加 embedding 计算
 - [x] T05 backfill 脚本给存量卡补 embedding
-- [ ] T06 cosine > 0.92 去重
+- [x] T06 cosine > 0.92 去重
 - [ ] T07 反向 RAG 分桶抽样（draw-engine.js）
 - [ ] T08 < 30 张降级到纯随机
 - [ ] T09 跨时间偏权（90 天+ 老卡 2x）
@@ -56,3 +56,5 @@ Status: T01-T05 done, starting T06
 - 2026-06-17: T01 验证：v1 /api/interpret + /api/deep-explore POST 都 404；/api/v2/me、/api/health 正常
 - 2026-06-18: T02 验证：bge-small-zh-v1.5 加载 4.1s，单 embed 2.58ms（resident），输出 512 维已 L2 归一化，两条相关文本 cosine=0.614（落"若有似无"区 0.4-0.7，反向 RAG 假设成立）
 - 2026-06-18: T03 决策：orientation 不入 card schema（draw-time 决定，落 history）。Migration 仅加 schemaVersion=2 + embedding: null，幂等。16 deck / 2082 卡迁移成功
+- 2026-06-18: T05：用户 deck embedding 不入 git；公共 + seed deck 部署后 ssh 跑 backfill 自动补
+- 2026-06-18: T06：cosine 去重放在 storage.appendCards，阈值 0.92。验证：sim=0.98 文本对成功去重，sim=0.31 不去重。res 多返 `deduped` 字段

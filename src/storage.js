@@ -11,6 +11,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { cosineSimilarity } = require('./utils');
+
+const DEDUP_THRESHOLD = 0.92;
 
 const DATA_BASE = process.env.DATA_DIR
   ? process.env.DATA_DIR
@@ -206,11 +209,38 @@ function appendCards(userId, deckIdOrCards, newCardsOrSourceMeta, maybeSourceMet
   let deck = getDeck(userId, deckId);
   if (!deck) throw new Error('Deck not found: ' + deckId);
   const existingIds = new Set((deck.cards || []).map(c => c.id));
-  const added = newCards.filter(c => !existingIds.has(c.id));
+  const idDeduped = newCards.filter(c => !existingIds.has(c.id));
+
+  // cosine 去重：cosine > DEDUP_THRESHOLD 视为重复
+  // 只对 newCard 与既有 deck cards 之间去重；新批次内冲突由 hashId 自然规避（id 撞库）
+  const existingEmbeddings = (deck.cards || [])
+    .filter(c => Array.isArray(c.embedding) && c.embedding.length > 0)
+    .map(c => c.embedding);
+  let dedupedByEmbedding = 0;
+  const added = [];
+  for (const card of idDeduped) {
+    if (Array.isArray(card.embedding) && card.embedding.length > 0 && existingEmbeddings.length > 0) {
+      let dup = false;
+      for (const e of existingEmbeddings) {
+        if (cosineSimilarity(card.embedding, e) > DEDUP_THRESHOLD) {
+          dup = true;
+          break;
+        }
+      }
+      if (dup) {
+        dedupedByEmbedding++;
+        continue;
+      }
+      // 同批内也去重
+      existingEmbeddings.push(card.embedding);
+    }
+    added.push(card);
+  }
+
   deck.cards = [...(deck.cards || []), ...added];
   deck.lastImport = sourceMeta || null;
   saveDeck(userId, deckId, deck);
-  return { added: added.length, total: deck.cards.length, deckId };
+  return { added: added.length, deduped: dedupedByEmbedding, total: deck.cards.length, deckId };
 }
 
 function removeCard(userId, deckIdOrCardId, maybeCardId) {
