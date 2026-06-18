@@ -209,23 +209,18 @@ body {
   opacity: 0.3;
 }
 
-/* ── Position Outer Label (mobile only, above card) ───── */
+/* ── Position Outer Label (above card, all viewports) ──── */
 .position-outer-label {
-  display: none;
-}
-@media (max-width: 768px) {
-  .position-outer-label {
-    display: inline-block;
-    background: #000000;
-    color: #ffffff;
-    padding: 2px 10px;
-    border-radius: 4px;
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    align-self: flex-start;
-  }
+  display: inline-block;
+  background: #000000;
+  color: #ffffff;
+  padding: 3px 12px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  align-self: center;
 }
 
 /* ── Position Label ────────────────────────────────────── */

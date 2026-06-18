@@ -535,7 +535,8 @@
         ? '你最近抽过的卡都已经在你脑子里了——这次允许重逢一张已经见过的。'
         : '牌已经翻开。先看抽象的标题，原文藏在翻面后。';
       renderCards(cards);
-      await sleep(cards.length * 300 + 600);
+      // 抽牌后让翻面动画 + 第一反应输入框并行出现，不再死等所有卡翻完
+      await sleep(600);
       $('drawStatus').classList.add('hidden');
 
       // 默认陌生化展示。给用户输入"第一反应"的入口
@@ -620,7 +621,7 @@
       slot.appendChild(wrapper);
       list.appendChild(slot);
 
-      setTimeout(() => wrapper.classList.add('flipped'), 200 + idx * 300);
+      setTimeout(() => wrapper.classList.add('flipped'), 200 + idx * 180);
 
       wrapper.addEventListener('click', () => {
         if (!wrapper.classList.contains('flipped')) return;
