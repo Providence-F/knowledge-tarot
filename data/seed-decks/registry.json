@@ -1,21 +1,12 @@
 [
   {
-    "id": "seed-jay-lyrics",
-    "slug": "jay-lyrics",
-    "name": "周杰伦歌词",
-    "description": "用周杰伦歌曲做人生抽牌：每张卡包含歌曲、发行信息、短摘句/意象、背景和解读。",
-    "emoji": "🎵",
-    "totalCards": 69,
-    "order": 1
-  },
-  {
     "id": "seed-harry-potter",
     "slug": "harry-potter",
     "name": "哈利波特金句",
     "description": "从七部小说的关键场景中抽取成长、选择、恐惧、友谊与死亡教育。",
     "emoji": "⚡",
     "totalCards": 72,
-    "order": 2
+    "order": 1
   },
   {
     "id": "seed-world-decisions",
@@ -23,7 +14,7 @@
     "name": "世界历史重大决策",
     "description": "把历史上的关键选择做成决策卡：背景、选项、代价、后果和可迁移的判断模型。",
     "emoji": "🏛️",
-    "totalCards": 60,
-    "order": 3
+    "totalCards": 100,
+    "order": 2
   }
 ]

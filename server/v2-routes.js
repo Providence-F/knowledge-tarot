@@ -200,6 +200,14 @@ router.post('/me/style', express.json(), (req, res) => {
   res.json({ user: profile });
 });
 
+router.post('/me/lens', express.json(), (req, res) => {
+  const allowed = ['jung', 'ifs', 'narrative'];
+  const lens = req.body?.lens;
+  if (!allowed.includes(lens)) return res.status(400).json({ error: 'Invalid lens' });
+  const profile = storage.updateUser(req.userId, { lens });
+  res.json({ user: profile });
+});
+
 router.post('/me/mode', express.json(), (req, res) => {
   const mode = req.body?.mode;
   if (!['public', 'private'].includes(mode)) {
@@ -567,8 +575,26 @@ router.post('/draw/three', express.json(), async (req, res) => {
   const cards = drawEngine.drawThree(picked.pool, excludeIds, questionEmbedding, feedback);
   if (cards.length < 3) return res.status(500).json({ error: 'Failed to draw three' });
 
-  const titles = await ai.nameCards(cards, question);
-  const dynamicTitles = cards.map((c, i) => (titles[i] && titles[i].trim()) || '（待命名）');
+  const lens = profile.lens || 'jung';
+  const aiResult = await ai.nameAndInterpret(cards, question, style, lens);
+  const dynamicTitles = cards.map((c, i) => aiResult.cards[i]?.dynamicTitle || '（待命名）');
+  const sharpQuestions = cards.map((c, i) => aiResult.cards[i]?.sharpQuestion || '');
+  const interpretations = cards.map((c, i) => aiResult.cards[i]?.interpretation || '');
+
+  // 合成三牌阵叙事
+  const cardsForSynth = cards.map((c, i) => ({
+    ...c,
+    _dynamicTitle: dynamicTitles[i],
+    _sharpQuestion: sharpQuestions[i],
+    _interpretation: interpretations[i]
+  }));
+  let narrative = '';
+  try {
+    const synth = await ai.synthesizeThree(cardsForSynth, question, style, lens);
+    narrative = synth.narrative || '';
+  } catch (e) {
+    console.error('[draw/three] synthesizeThree error:', e.message);
+  }
 
   let drawnAt = null;
   if (!isUntracked) {
@@ -582,9 +608,15 @@ router.post('/draw/three', express.json(), async (req, res) => {
         position: c.position,
         positionName: c.positionName,
         dynamicTitle: dynamicTitles[i],
+        sharpQuestion: sharpQuestions[i],
+        interpretation: interpretations[i],
         drawMeta: c._drawMeta || null
       })),
       dynamicTitles,
+      sharpQuestions,
+      interpretations,
+      narrative,
+      lens,
       deckId: picked.deckId
     });
     drawnAt = arr[0]?.drawnAt || null;
@@ -592,6 +624,10 @@ router.post('/draw/three', express.json(), async (req, res) => {
   res.json({
     cards,
     dynamicTitles,
+    sharpQuestions,
+    interpretations,
+    narrative,
+    lens,
     style,
     isPublic: picked.kind !== 'owned',
     deckId: picked.deckId,

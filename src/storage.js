@@ -83,6 +83,7 @@ function getOrCreateUser(userId) {
   if (profile.onboardedAt === undefined) { profile.onboardedAt = null; dirty = true; }
   if (profile.activeDeckId === undefined) { profile.activeDeckId = null; dirty = true; }
   if (!Array.isArray(profile.ownedDeckIds)) { profile.ownedDeckIds = []; dirty = true; }
+  if (profile.lens === undefined) { profile.lens = 'jung'; dirty = true; }
   if (dirty) writeJSON(profilePath, profile);
   return profile;
 }

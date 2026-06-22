@@ -38,7 +38,7 @@ function load() {
         continue;
       }
       const deck = JSON.parse(fs.readFileSync(file, 'utf-8'));
-      // id 形如 seed-jay-lyrics
+      // id 形如 seed-harry-potter
       const id = entry.id || `seed-${slug}`;
       const fullDeck = {
         ...deck,

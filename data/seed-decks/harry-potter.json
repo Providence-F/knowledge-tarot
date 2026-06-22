@@ -6,12 +6,12 @@
   "description": "从七部小说的关键场景中抽取成长、选择、恐惧、友谊与死亡教育。",
   "emoji": "⚡",
   "visibility": "system-readonly",
-  "createdAt": 1781672183715,
-  "updatedAt": 1781672183715,
+  "createdAt": 1782130002002,
+  "updatedAt": 1782130002002,
   "totalCards": 72,
   "lastImport": {
     "source": "seed-build-v2",
-    "at": 1781672183715,
+    "at": 1782130002002,
     "strategy": "curated-structured-cards"
   },
   "cards": [
@@ -30,13 +30,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183714,
+      "createdAt": 1782130002000,
       "tags": [
         "harry-potter",
         "魔法石",
         "碗橱里的男孩"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "iwbb1rcs",
@@ -53,13 +52,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183715,
+      "createdAt": 1782130002002,
       "tags": [
         "harry-potter",
         "魔法石",
         "霍格沃茨来信"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "3ei-x9zl",
@@ -76,13 +74,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183716,
+      "createdAt": 1782130002003,
       "tags": [
         "harry-potter",
         "魔法石",
         "九又四分之三站台"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "jypxt7d2",
@@ -99,13 +96,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183717,
+      "createdAt": 1782130002004,
       "tags": [
         "harry-potter",
         "魔法石",
         "分院帽"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "3v6mehjm",
@@ -122,13 +118,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183718,
+      "createdAt": 1782130002005,
       "tags": [
         "harry-potter",
         "魔法石",
         "厄里斯魔镜"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "wazafsow",
@@ -145,13 +140,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183719,
+      "createdAt": 1782130002006,
       "tags": [
         "harry-potter",
         "魔法石",
         "赫敏的举手"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "0ozzrrmj",
@@ -168,13 +162,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183721,
+      "createdAt": 1782130002007,
       "tags": [
         "harry-potter",
         "魔法石",
         "罗恩的巫师棋"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "0zcopt68",
@@ -191,13 +184,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183722,
+      "createdAt": 1782130002008,
       "tags": [
         "harry-potter",
         "魔法石",
         "斯内普的误判"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "2wwxjexf",
@@ -214,13 +206,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183723,
+      "createdAt": 1782130002009,
       "tags": [
         "harry-potter",
         "魔法石",
         "奇洛的后脑"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "mxkj6acp",
@@ -237,13 +228,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183724,
+      "createdAt": 1782130002010,
       "tags": [
         "harry-potter",
         "魔法石",
         "莉莉的保护"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "v3qeeiwa",
@@ -260,13 +250,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183725,
+      "createdAt": 1782130002011,
       "tags": [
         "harry-potter",
         "密室",
         "蛇佬腔"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "q78a8yo0",
@@ -283,13 +272,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183726,
+      "createdAt": 1782130002012,
       "tags": [
         "harry-potter",
         "密室",
         "多比的警告"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "sm4qacnq",
@@ -306,13 +294,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183727,
+      "createdAt": 1782130002013,
       "tags": [
         "harry-potter",
         "密室",
         "日记本"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "occkmepl",
@@ -329,13 +316,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183728,
+      "createdAt": 1782130002014,
       "tags": [
         "harry-potter",
         "密室",
         "金妮的沉默"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "xg52-wwr",
@@ -352,13 +338,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183729,
+      "createdAt": 1782130002015,
       "tags": [
         "harry-potter",
         "密室",
         "洛哈特的微笑"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "dliv_8tb",
@@ -375,13 +360,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183730,
+      "createdAt": 1782130002016,
       "tags": [
         "harry-potter",
         "密室",
         "赫敏石化"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "skiwofhh",
@@ -398,13 +382,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183731,
+      "createdAt": 1782130002017,
       "tags": [
         "harry-potter",
         "密室",
         "福克斯的眼泪"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "lhui0bgb",
@@ -421,13 +404,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183732,
+      "createdAt": 1782130002018,
       "tags": [
         "harry-potter",
         "密室",
         "格兰芬多宝剑"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "pw2ezknu",
@@ -444,13 +426,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183733,
+      "createdAt": 1782130002019,
       "tags": [
         "harry-potter",
         "密室",
         "释放多比"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "15oeg1u2",
@@ -467,13 +448,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183734,
+      "createdAt": 1782130002020,
       "tags": [
         "harry-potter",
         "密室",
         "不是斯莱特林"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "kawanghb",
@@ -490,13 +470,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183735,
+      "createdAt": 1782130002021,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "摄魂怪"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "1zqeazi0",
@@ -513,13 +492,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183736,
+      "createdAt": 1782130002022,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "卢平的课"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "ejl-l8jm",
@@ -536,13 +514,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183737,
+      "createdAt": 1782130002023,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "博格特衣柜"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "8c3foanp",
@@ -559,13 +536,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183738,
+      "createdAt": 1782130002024,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "活点地图"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "qosunmrk",
@@ -582,13 +558,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183739,
+      "createdAt": 1782130002025,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "小天狼星真相"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "30cv4rgr",
@@ -605,13 +580,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183740,
+      "createdAt": 1782130002026,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "彼得的背叛"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "17-rwbmg",
@@ -628,13 +602,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183741,
+      "createdAt": 1782130002027,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "时间转换器"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "cpsujmlo",
@@ -651,13 +624,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183742,
+      "createdAt": 1782130002028,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "守护神咒"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "lqk3q-oq",
@@ -674,13 +646,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183743,
+      "createdAt": 1782130002029,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "巴克比克逃脱"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "b91rdec6",
@@ -697,13 +668,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183744,
+      "createdAt": 1782130002030,
       "tags": [
         "harry-potter",
         "阿兹卡班囚徒",
         "月圆的卢平"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "xxz8_iod",
@@ -720,13 +690,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183745,
+      "createdAt": 1782130002031,
       "tags": [
         "harry-potter",
         "火焰杯",
         "三强争霸报名"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "akdsokna",
@@ -743,13 +712,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183746,
+      "createdAt": 1782130002032,
       "tags": [
         "harry-potter",
         "火焰杯",
         "穆迪的课堂"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "n6e0nqbf",
@@ -766,13 +734,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183747,
+      "createdAt": 1782130002034,
       "tags": [
         "harry-potter",
         "火焰杯",
         "第一项火龙"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "giia8g30",
@@ -789,13 +756,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183748,
+      "createdAt": 1782130002035,
       "tags": [
         "harry-potter",
         "火焰杯",
         "圣诞舞会"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "tqubzwlp",
@@ -812,13 +778,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183749,
+      "createdAt": 1782130002036,
       "tags": [
         "harry-potter",
         "火焰杯",
         "第二项湖底"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "amo4kmfq",
@@ -835,13 +800,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183750,
+      "createdAt": 1782130002037,
       "tags": [
         "harry-potter",
         "火焰杯",
         "丽塔斯基特"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "z_zjnc-g",
@@ -858,13 +822,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183751,
+      "createdAt": 1782130002038,
       "tags": [
         "harry-potter",
         "火焰杯",
         "塞德里克之死"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "v2drwapn",
@@ -881,13 +844,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183752,
+      "createdAt": 1782130002039,
       "tags": [
         "harry-potter",
         "火焰杯",
         "伏地魔复活"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "1cobxenr",
@@ -904,13 +866,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183753,
+      "createdAt": 1782130002040,
       "tags": [
         "harry-potter",
         "火焰杯",
         "双胞胎的玩笑"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "gf7jwyk5",
@@ -927,13 +888,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183754,
+      "createdAt": 1782130002041,
       "tags": [
         "harry-potter",
         "火焰杯",
         "邓布利多的相信"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "ga5iwola",
@@ -950,13 +910,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183755,
+      "createdAt": 1782130002042,
       "tags": [
         "harry-potter",
         "凤凰社",
         "乌姆里奇"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "ful9e5dm",
@@ -973,13 +932,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183756,
+      "createdAt": 1782130002043,
       "tags": [
         "harry-potter",
         "凤凰社",
         "邓布利多军"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "mguinsxc",
@@ -996,13 +954,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183757,
+      "createdAt": 1782130002044,
       "tags": [
         "harry-potter",
         "凤凰社",
         "哈利的愤怒"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "aoagnenn",
@@ -1019,13 +976,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183758,
+      "createdAt": 1782130002045,
       "tags": [
         "harry-potter",
         "凤凰社",
         "预言球"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "p_r-dlj1",
@@ -1042,13 +998,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183759,
+      "createdAt": 1782130002046,
       "tags": [
         "harry-potter",
         "凤凰社",
         "秋张的眼泪"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "ezp5_fxc",
@@ -1065,13 +1020,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183760,
+      "createdAt": 1782130002047,
       "tags": [
         "harry-potter",
         "凤凰社",
         "小天狼星离开"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "gtt0invv",
@@ -1088,13 +1042,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183761,
+      "createdAt": 1782130002048,
       "tags": [
         "harry-potter",
         "凤凰社",
         "卢娜的平静"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "vsdn7vk_",
@@ -1111,13 +1064,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183762,
+      "createdAt": 1782130002049,
       "tags": [
         "harry-potter",
         "凤凰社",
         "魔法部不信"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "lfixp5tt",
@@ -1134,13 +1086,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183763,
+      "createdAt": 1782130002050,
       "tags": [
         "harry-potter",
         "凤凰社",
         "伤疤连接"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "jkgbsv4s",
@@ -1157,13 +1108,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183764,
+      "createdAt": 1782130002051,
       "tags": [
         "harry-potter",
         "凤凰社",
         "邓布利多的距离"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "cu4sirrd",
@@ -1180,13 +1130,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183765,
+      "createdAt": 1782130002052,
       "tags": [
         "harry-potter",
         "混血王子",
         "旧课本批注"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "van3as_t",
@@ -1203,13 +1152,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183766,
+      "createdAt": 1782130002053,
       "tags": [
         "harry-potter",
         "混血王子",
         "斯拉格霍恩"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "dgm1ff2r",
@@ -1226,13 +1174,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183767,
+      "createdAt": 1782130002054,
       "tags": [
         "harry-potter",
         "混血王子",
         "魂器课题"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "1hhjvcjh",
@@ -1249,13 +1196,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183768,
+      "createdAt": 1782130002055,
       "tags": [
         "harry-potter",
         "混血王子",
         "德拉科的任务"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "5za8lcak",
@@ -1272,13 +1218,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183769,
+      "createdAt": 1782130002056,
       "tags": [
         "harry-potter",
         "混血王子",
         "山洞药水"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "57akrul7",
@@ -1295,13 +1240,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183770,
+      "createdAt": 1782130002057,
       "tags": [
         "harry-potter",
         "混血王子",
         "天文塔"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "lcuyplrt",
@@ -1318,13 +1262,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183771,
+      "createdAt": 1782130002058,
       "tags": [
         "harry-potter",
         "混血王子",
         "混血王子的身份"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "eecbtwzl",
@@ -1341,13 +1284,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183772,
+      "createdAt": 1782130002059,
       "tags": [
         "harry-potter",
         "混血王子",
         "金妮与哈利"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "02wj2l02",
@@ -1364,13 +1306,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183773,
+      "createdAt": 1782130002060,
       "tags": [
         "harry-potter",
         "混血王子",
         "罗恩中毒"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "ze_ervwd",
@@ -1387,13 +1328,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183774,
+      "createdAt": 1782130002061,
       "tags": [
         "harry-potter",
         "混血王子",
         "没有葬礼式答案"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "vtvoq8sh",
@@ -1410,13 +1350,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183775,
+      "createdAt": 1782130002062,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "七个哈利"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "izgaz5nk",
@@ -1433,13 +1372,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183776,
+      "createdAt": 1782130002063,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "魂器项链"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "dnm6tde8",
@@ -1456,13 +1394,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183777,
+      "createdAt": 1782130002064,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "罗恩离队"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "7x7bxjqs",
@@ -1479,13 +1416,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183778,
+      "createdAt": 1782130002065,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "银色牝鹿"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "2h8l5t7b",
@@ -1502,13 +1438,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183779,
+      "createdAt": 1782130002066,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "贝拉特里克斯金库"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "fvel1dfg",
@@ -1525,13 +1460,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183780,
+      "createdAt": 1782130002067,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "马尔福庄园"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "w7-mlwws",
@@ -1548,13 +1482,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183781,
+      "createdAt": 1782130002068,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "多比之死"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "p6jbd3xa",
@@ -1571,13 +1504,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183782,
+      "createdAt": 1782130002069,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "斯内普记忆"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "vuztb0bk",
@@ -1594,13 +1526,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183783,
+      "createdAt": 1782130002070,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "禁林赴死"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "q5gbrclr",
@@ -1617,13 +1548,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183784,
+      "createdAt": 1782130002071,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "纳威斩蛇"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "bil6zb_n",
@@ -1640,13 +1570,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183785,
+      "createdAt": 1782130002072,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "老魔杖失效"
-      ],
-      "embedding": null
+      ]
     },
     {
       "id": "lq0g8lxa",
@@ -1663,14 +1592,12 @@
         "path": null,
         "label": "harry-potter"
       },
-      "createdAt": 1781672183786,
+      "createdAt": 1782130002073,
       "tags": [
         "harry-potter",
         "死亡圣器",
         "十九年后"
-      ],
-      "embedding": null
+      ]
     }
-  ],
-  "schemaVersion": 2
+  ]
 }

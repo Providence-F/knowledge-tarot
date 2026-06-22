@@ -4,8 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识塔罗</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260618f">
+  <link rel="stylesheet" href="css/style.css?v=20260622v3">
+  <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
+  <script src="https://unpkg.com/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -27,6 +32,7 @@
   </script>
 </head>
 <body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
+  <div class="paper-texture" aria-hidden="true"></div>
 
   <!-- Onboarding Wall（首次进入选模式） -->
   <div id="onboardingModal" class="fixed inset-0 z-[60] hidden">
@@ -158,6 +164,11 @@
             <option value="philosophical">哲学思辨</option>
             <option value="playful">玩味段子手</option>
           </select>
+          <select id="lensSelect" class="bg-white border border-tarot-border rounded-lg px-3 py-1.5 text-xs text-tarot-ivory focus:outline-none focus:border-black/40">
+            <option value="jung">荣格视角</option>
+            <option value="ifs">IFS 视角</option>
+            <option value="narrative">叙事疗法</option>
+          </select>
           <a href="v2-library.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">我的牌库</a>
           <a href="v2-import.html" class="text-tarot-muted hover:text-black transition-colors text-xs underline">导入内容</a>
         </div>
@@ -186,6 +197,14 @@
             <option value="playful">玩味段子手</option>
           </select>
         </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-tarot-muted">解读视角</span>
+          <select id="lensSelectMobile" class="bg-white border border-tarot-border rounded-lg px-3 py-2 text-xs text-tarot-ivory focus:outline-none focus:border-black/40 min-h-[40px]">
+            <option value="jung">荣格视角</option>
+            <option value="ifs">IFS 视角</option>
+            <option value="narrative">叙事疗法</option>
+          </select>
+        </div>
         <div id="userIdBadgeMobileWrap" class="hidden flex items-center justify-between text-xs">
           <span class="text-tarot-muted">身份</span>
           <span id="userIdBadgeMobile" class="text-[10px] text-tarot-muted font-mono px-2 py-1 rounded bg-tarot-accent"></span>
@@ -203,7 +222,7 @@
 
     <!-- 空牌堆引导 -->
     <section id="emptyState" class="text-center py-20 hidden">
-      <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">你的牌堆还是空的</h2>
+      <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">你的牌堆还是空的。像一张白纸放在桌上。</h2>
       <p class="text-tarot-muted max-w-xl mx-auto mb-8">
         把你写过的笔记、和 AI 的对话、任何你思考过的内容<br>
         变成属于你自己的塔罗牌堆
@@ -220,83 +239,105 @@
     <section id="drawSection" class="hidden">
       <!-- 牌堆规模引导（T24，<30 张时显示） -->
       <div id="deckStageHint" class="hidden max-w-2xl mx-auto mb-6 p-3 border border-tarot-border rounded-lg bg-tarot-accent/40 text-xs text-tarot-muted text-center"></div>
-      <!-- Intro -->
-      <section id="introSection" class="text-center mb-10">
-        <h2 class="text-3xl md:text-4xl font-serif text-black mb-3">把困惑写到具体</h2>
-        <p class="text-tarot-muted max-w-xl mx-auto">
-          答案在你已经写过、读过、忘了的笔记里。<br>
-          先把困惑分三步说清楚，再让过去的自己回话。
+      <!-- Stage 1: 入口 -->
+      <section id="introSection" class="stage text-center">
+        <div class="stage-number">I</div>
+        <div class="folder-hero">
+          <svg viewBox="0 0 180 140" fill="none" stroke="var(--ink)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 60 L20 120 L160 120 L160 60"/>
+            <path d="M20 60 L60 40 L140 40 L160 60"/>
+            <path d="M80 40 L80 20 L100 20 L100 40"/>
+            <path d="M70 60 Q90 80 110 60"/>
+          </svg>
+        </div>
+        <h2 class="font-serif text-black mb-4" style="font-size:var(--font-hero)">像一个问题被放在这里。</h2>
+        <p class="text-tarot-muted max-w-xl mx-auto mb-8" style="font-size:var(--font-body);line-height:var(--lh-loose)">
+          你写过的东西，在等你回来。<span style="font-family:var(--font-hand);font-size:20px;margin-left:6px;opacity:0.6">waiting.</span>
         </p>
+        <button onclick="document.getElementById('stage2').scrollIntoView({behavior:'smooth'})" class="door-btn" style="max-width:200px;margin:0 auto">
+          <span>打开</span>
+        </button>
+        <div class="scroll-cue"></div>
       </section>
 
-      <!-- Question Input：三步引导 -->
-      <section class="max-w-2xl mx-auto mb-8 space-y-5">
-        <div>
-          <label class="block text-sm text-black font-medium mb-2">1) 你今天真正想问的是什么？</label>
-          <input id="qInput1" type="text" placeholder="例如：我该不该继续做这个项目？" maxlength="200"
-            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
-          <div class="mt-2 flex flex-wrap gap-2 text-xs">
-            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我现在卡住的点是什么？</button>
-            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">这段关系真正的问题是什么？</button>
-            <button class="question-example px-3 py-1.5 rounded-full border border-tarot-border text-tarot-muted hover:text-black hover:border-black/40 transition" type="button">我该把注意力放在哪里？</button>
+      <!-- Stage 2: 三步问题输入 -->
+      <section id="stage2" class="stage">
+        <div class="stage-number">II</div>
+        <h2 class="font-serif text-black mb-2 text-center" style="font-size:var(--font-title)">三个问题，放在这里</h2>
+        <p class="text-tarot-muted text-center mb-10" style="font-size:var(--font-body)">像刚刚有人离开，像某个决定还没发生</p>
+        <div class="max-w-2xl mx-auto space-y-8">
+          <div>
+            <label class="block text-sm text-black font-medium mb-3">你今天真正想问的是什么？</label>
+            <input id="qInput1" type="text" placeholder="例如：我该不该继续做这个项目？" maxlength="200" class="paper-input">
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button class="question-example paper-chip" type="button">我现在卡住的点是什么？</button>
+              <button class="question-example paper-chip" type="button">这段关系真正的问题是什么？</button>
+              <button class="question-example paper-chip" type="button">我该把注意力放在哪里？</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm text-black font-medium mb-3">你心里隐约觉得答案可能是什么？<span class="text-tarot-muted font-normal text-xs">（可选）</span></label>
+            <input id="qInput2" type="text" placeholder="例如：可能我心里其实知道要放手了" maxlength="200" class="paper-input">
+          </div>
+          <div>
+            <label class="block text-sm text-black font-medium mb-3">你最害怕的答案是什么？<span class="text-tarot-muted font-normal text-xs">（可选）</span></label>
+            <input id="qInput3" type="text" placeholder="例如：怕承认这两年是白费的" maxlength="200" class="paper-input">
           </div>
         </div>
-        <div>
-          <label class="block text-sm text-black font-medium mb-2">2) 你心里隐约觉得答案可能是什么？<span class="text-tarot-muted font-normal text-xs">（可选，让潜在答案先浮出来）</span></label>
-          <input id="qInput2" type="text" placeholder="例如：可能我心里其实知道要放手了" maxlength="200"
-            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
-        </div>
-        <div>
-          <label class="block text-sm text-black font-medium mb-2">3) 你最害怕的答案是什么？<span class="text-tarot-muted font-normal text-xs">（可选，让阻抗也现身）</span></label>
-          <input id="qInput3" type="text" placeholder="例如：怕承认这两年是白费的" maxlength="200"
-            class="w-full bg-white border border-tarot-border rounded-xl px-5 py-3 text-black placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors">
-        </div>
       </section>
 
-      <!-- Spread Selection -->
-      <section class="max-w-2xl mx-auto mb-10">
-        <label class="block text-sm text-tarot-muted mb-3">选择牌阵</label>
-        <div class="grid grid-cols-2 gap-4">
+      <!-- Stage 3: 牌阵选择 -->
+      <section id="stage3" class="stage text-center">
+        <div class="stage-number">III</div>
+        <h2 class="font-serif text-black mb-8" style="font-size:var(--font-title)">选一扇门</h2>
+        <div class="max-w-2xl mx-auto grid grid-cols-2 gap-4 mb-8">
           <button class="spread-btn active" data-spread="single">
+            <svg class="mx-auto mb-3" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="12" y="8" width="24" height="32" rx="2"/>
+              <line x1="24" y1="8" x2="24" y2="40"/>
+            </svg>
             <div class="text-lg font-bold mb-1">日签</div>
-            <div class="text-xs text-tarot-muted">1 张牌 · 即兴指引</div>
+            <div class="text-xs text-tarot-muted">一个入口</div>
           </button>
           <button class="spread-btn" data-spread="three">
+            <svg class="mx-auto mb-3" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="4" y="8" width="12" height="32" rx="2"/>
+              <rect x="18" y="8" width="12" height="32" rx="2"/>
+              <rect x="32" y="8" width="12" height="32" rx="2"/>
+            </svg>
             <div class="text-lg font-bold mb-1">三牌阵</div>
-            <div class="text-xs text-tarot-muted">过去 · 现在 · 未来</div>
+            <div class="text-xs text-tarot-muted">三个入口</div>
           </button>
         </div>
-      </section>
-
-      <!-- Draw Button -->
-      <section class="text-center mb-12">
-        <button id="drawBtn" class="group relative inline-flex items-center gap-3 px-10 py-4 bg-black/5 border border-black/30 rounded-full text-black hover:bg-black/10 transition-all">
-          <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          <span class="text-lg font-medium">抽牌</span>
+        <button id="drawBtn" class="door-btn" style="max-width:320px;margin:0 auto">
+          <span>打开</span>
         </button>
       </section>
 
-      <!-- Cards Display -->
-      <section id="cardsArea" class="mb-10 hidden">
+      <!-- Stage 4: 牌阵展示 -->
+      <section id="cardsArea" class="stage hidden">
+        <div class="stage-number">IV</div>
         <div id="drawContext" class="max-w-2xl mx-auto mb-6 text-center hidden"></div>
         <div id="drawStatus" class="max-w-2xl mx-auto mb-6 text-center text-sm text-tarot-muted hidden"></div>
-        <div id="cardsContainer" class="grid gap-6 md:gap-8 justify-center mx-auto mb-10"></div>
+        <div id="cardsContainer" class="flex flex-col items-center gap-10 mx-auto mb-10"></div>
 
-        <!-- reactionSection 已重构为 body 级浮窗 #reactionWidget -->
-
-        <!-- AI Interpretation（旧 ID 保留以避免脚本崩，但默认隐藏） -->
-        <div id="aiSection" class="hidden"></div>
+        <!-- 三牌阵叙事 -->
+        <div id="spreadNarrative" class="max-w-2xl mx-auto mb-10 hidden"></div>
 
         <!-- Re-draw -->
         <div class="flex justify-center mt-8">
-          <button id="redrawBtn" class="px-5 py-2.5 rounded-xl border border-tarot-border text-sm hover:border-black/40 transition-colors flex items-center gap-2">
+          <button id="redrawBtn" class="px-5 py-2.5 text-xs text-tarot-muted hover:text-black transition-colors flex items-center gap-2" style="border:none;background:transparent">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            重新抽牌
+            再开一次
           </button>
         </div>
       </section>
+
+      <!-- Stage 5: 反应入口锚点 -->
+      <div id="stage5-anchor"></div>
+
+      <!-- AI Interpretation（旧 ID 保留以避免脚本崩，但默认隐藏） -->
+      <div id="aiSection" class="hidden"></div>
 
     </section>
   </main>
@@ -379,7 +420,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
       </svg>
-      <span class="reaction-widget-button-label">写下第一反应</span>
+      <span class="reaction-widget-button-label">你想到什么了？</span>
     </button>
     <!-- 展开态：抽屉式面板 -->
     <div id="reactionWidgetPanel" class="reaction-widget-panel hidden">
@@ -390,24 +431,24 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9.75h.008v.008H9.75V9.75zM14.25 9.75h.008v.008h-.008V9.75z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2"/>
           </svg>
-          <h3 class="font-bold text-black text-base truncate">看到这张牌的第一反应是什么？</h3>
+          <h3 class="font-bold text-black text-base truncate">这张牌刚被翻开。你想到什么了？</h3>
         </div>
         <button id="reactionWidgetClose" class="text-tarot-muted hover:text-black p-1 -m-1 shrink-0" title="收起">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
         </button>
       </div>
       <div class="reaction-widget-body">
-        <p class="text-xs text-tarot-muted mb-3">不用想得太完整。冒出来什么写什么——这一步比答案更重要。</p>
+        <p class="text-xs text-tarot-muted mb-3">像刚刚有人离开。冒出来什么写什么。</p>
         <textarea id="reactionInput" rows="4" maxlength="800"
           placeholder="例如：突然想到那年冬天我已经决定要走了，是我自己又给自己续了三年……"
           class="w-full bg-white border border-tarot-border rounded-xl px-4 py-3 text-sm text-tarot-ivory placeholder-tarot-muted/50 focus:outline-none focus:border-black/60 transition-colors resize-y"></textarea>
         <div class="mt-4 flex flex-wrap gap-3 justify-between items-center">
-          <div class="text-xs text-tarot-muted">写完可以直接关掉网页——这是产品成功，不是失败。</div>
+          <div class="text-xs text-tarot-muted">门可以关上。你回来的时候它还在。</div>
           <div class="flex gap-3">
-            <button id="finishReactionBtn" class="px-5 py-2 rounded-full border border-tarot-border text-sm hover:border-black/40 transition">写完了，今天到此为止</button>
+            <button id="finishReactionBtn" class="px-5 py-2 rounded-full border border-tarot-border text-sm hover:border-black/40 transition">门可以关上</button>
             <button id="askDeeperBtn" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-              我想再聊聊
+              继续走进去
             </button>
           </div>
         </div>
@@ -417,6 +458,6 @@
     </div>
   </div>
 
-  <script src="js/v2-app.js?v=20260618f"></script>
+  <script src="js/v2-app.js?v=20260622b"></script>
 </body>
 </html>

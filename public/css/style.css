@@ -1,20 +1,60 @@
-/* ── Theme ─────────────────────────────────────────────── */
+/* ── Theme · Kai Visual System v2 (我是白母题驱动) ─────── */
 :root {
-  --tarot-bg: #ffffff;
-  --tarot-card: #ffffff;
-  --tarot-gold: #000000;
+  /* Color — 7 类，纯黑白灰，禁彩色 */
+  --bg:        #ffffff;
+  --ink:       #0a0a0a;
+  --text:      #1a1a1a;
+  --muted:     #888888;
+  --border:    #e5e5e5;
+  --accent:    #f5f5f5;
+  --overlay:   rgba(0,0,0,0.5);
+
+  /* Typography — 5 档字号 + 3 档字重 + 3 档行高 */
+  --font-hero:     clamp(40px, 5vw, 56px);
+  --font-title:    clamp(24px, 3vw, 32px);
+  --font-subtitle: 18px;
+  --font-body:     16px;
+  --font-caption:  12px;
+  --fw-regular: 400; --fw-medium: 500; --fw-bold: 700;
+  --lh-tight: 1.2; --lh-normal: 1.6; --lh-loose: 1.8;
+  --font-serif: Georgia, 'Noto Serif SC', serif;
+  --font-sans:  Inter, 'Noto Sans SC', system-ui, sans-serif;
+  --font-hand:  'Caveat', 'Kalam', cursive;
+
+  /* Spacing */
+  --sp-xs: 8px; --sp-sm: 16px; --sp-md: 32px; --sp-lg: 64px; --sp-xl: 96px;
+  --section-py: 120px; --section-py-lg: 160px;
+
+  /* Radius / Shadow / Layout */
+  --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-pill: 9999px;
+  --shadow-card:  0 1px 2px rgba(0,0,0,0.04);
+  --shadow-modal: 0 16px 48px rgba(0,0,0,0.18);
+  --content-max: 720px; --content-wide: 880px;
+
+  /* Motion */
+  --ease-quiet:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-stage:  800ms;
+  --dur-card:   800ms;
+  --dur-tilt:   400ms;
+
+  /* ── 旧 token 别名（向后兼容，避免 JS 选择器断裂） ── */
+  --tarot-bg:    var(--bg);
+  --tarot-card:  var(--bg);
+  --tarot-gold:  var(--ink);
   --tarot-gold-light: #333333;
-  --tarot-ivory: #1a1a1a;
-  --tarot-muted: #888888;
-  --tarot-border: #e5e5e5;
-  --tarot-accent: #f5f5f5;
+  --tarot-ivory: var(--text);
+  --tarot-muted: var(--muted);
+  --tarot-border: var(--border);
+  --tarot-accent: var(--accent);
 }
 
 /* ── Base ──────────────────────────────────────────────── */
 body {
-  background: var(--tarot-bg);
-  color: var(--tarot-ivory);
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
+  font-family: var(--font-sans);
 }
 
 /* ── Spread Buttons ────────────────────────────────────── */
@@ -62,14 +102,14 @@ body {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  border-radius: 1rem;
-  border: 1px solid var(--tarot-border);
-  background: var(--tarot-card);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--ink);
+  background: var(--bg);
   overflow: hidden;
 }
 
 .card-back {
-  background: linear-gradient(145deg, #fafafa 0%, #f0f0f0 100%);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -77,28 +117,15 @@ body {
   cursor: pointer;
 }
 
-.card-back::before {
-  content: '';
-  position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(201, 168, 76, 0.25);
-  border-radius: 0.75rem;
-  pointer-events: none;
-}
-
-.card-back::after {
-  content: '';
-  position: absolute;
-  inset: 20px;
-  border: 1px solid rgba(201, 168, 76, 0.12);
-  border-radius: 0.5rem;
-  pointer-events: none;
-}
+/* 移除金色装饰伪元素 — 我是白：纯黑白灰 */
+.card-back::before, .card-back::after { content: none; }
 
 .card-back-pattern {
   width: 64px;
   height: 64px;
-  opacity: 0.3;
+  opacity: 0.15;
+  stroke: var(--ink);
+  fill: none;
 }
 
 .card-front {
@@ -106,45 +133,104 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
+  position: relative;
 }
 
-/* ── Reversed Card: Soft Inverted Color Scheme ─────────── */
-/* 逆位卡用柔和深底浅字做区分（不旋转内容，避免歪头读中文） */
+/* 折角效果 — 像刚被放下的纸 */
+.card-front::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, transparent 50%, var(--ink) 50%);
+  opacity: 0.08;
+}
+
+/* ── 逆位：旋转 + 角标三角，无深底色 ─────────── */
 .card-front.is-reversed {
-  background: #1a1a1a;
-  border-color: #2a2a2a;
-}
-.card-front.is-reversed .text-black { color: #fafafa; }
-.card-front.is-reversed .text-tarot-ivory { color: #d0d0d0; }
-.card-front.is-reversed .text-tarot-muted { color: #9a9a9a; }
-.card-front.is-reversed .border-tarot-border { border-color: #2a2a2a; }
-/* orientationMark "逆位" 徽标在深底上的对比度修正 */
-.card-front.is-reversed .border-black\/40 { border-color: rgba(255, 255, 255, 0.4); }
-.card-front.is-reversed .text-black\/70 { color: rgba(255, 255, 255, 0.85); }
-
-/* ── Suit Colors ───────────────────────────────────────── */
-.suit-sword-of-self    { --suit-color: #000000; --suit-bg: #f5f5f5; }
-.suit-mirror-of-world  { --suit-color: #000000; --suit-bg: #f5f5f5; }
-.suit-compass-of-method{ --suit-color: #000000; --suit-bg: #f5f5f5; }
-.suit-ship-of-action   { --suit-color: #000000; --suit-bg: #f5f5f5; }
-.suit-seed-of-growth   { --suit-color: #000000; --suit-bg: #f5f5f5; }
-
-.card-front.suit-sword-of-self    { border-color: #e5e5e5; }
-.card-front.suit-mirror-of-world  { border-color: #e5e5e5; }
-.card-front.suit-compass-of-method{ border-color: #e5e5e5; }
-.card-front.suit-ship-of-action   { border-color: #e5e5e5; }
-.card-front.suit-seed-of-growth   { border-color: #e5e5e5; }
-
-.suit-badge {
-  color: var(--suit-color);
-  border-color: rgba(255,255,255,0.1);
-  background: var(--suit-bg);
+  transform: rotateY(180deg) rotate(-2deg);
 }
 
-/* ── Arcana Badges ─────────────────────────────────────── */
-.arcana-major { background: #1a1a1a; color: #ffffff; }
-.arcana-court { background: #666666; color: #ffffff; }
-.arcana-pip   { background: #e5e5e5; color: #666666; }
+.card-front.is-reversed::before {
+  content: '\25BC';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 7px;
+  color: var(--ink);
+  opacity: 0.5;
+}
+.card-front.is-reversed h3 {
+  border-top: 1px dashed var(--ink);
+  padding-top: 10px;
+  margin-top: 14px;
+}
+
+/* ── 花色：全部统一黑白，仅物件 SVG 区分 ─────────── */
+.suit-sword-of-self,
+.suit-mirror-of-world,
+.suit-compass-of-method,
+.suit-ship-of-action,
+.suit-seed-of-growth {
+  --suit-color: var(--ink);
+  --suit-bg: var(--accent);
+}
+
+.card-front.suit-sword-of-self,
+.card-front.suit-mirror-of-world,
+.card-front.suit-compass-of-method,
+.card-front.suit-ship-of-action,
+.card-front.suit-seed-of-growth {
+  border-color: var(--ink);
+}
+
+/* 花色物件 SVG（正面右侧） */
+.suit-object {
+  position: absolute;
+  right: 16px;
+  bottom: 48px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.12;
+  stroke: var(--ink);
+  fill: none;
+}
+
+/* 角标 */
+.card-corner-tl {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-serif);
+  letter-spacing: 0.05em;
+}
+
+.card-corner-br {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+/* 移除旧 badge 系统 */
+.suit-badge { display: none; }
+
+/* Arcana 徽章：降到文字角标，无背景色 */
+.arcana-major, .arcana-court, .arcana-pip {
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--font-serif);
+  letter-spacing: 0.05em;
+}
 
 /* ── Animations ────────────────────────────────────────── */
 @keyframes float {
@@ -317,6 +403,63 @@ body {
   color: #555;
 }
 
+/* ── v2.0 卡牌正面尖锐问题 / 详情解读 / 三牌阵叙事 ── */
+.sharp-question-box {
+  background: rgba(255, 255, 255, 0.5);
+  border-left: 2px solid #1a1a1a;
+  padding: 8px 10px;
+  border-radius: 0 6px 6px 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.card-detail-body .sharp-question-detail {
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #000;
+  font-weight: 500;
+  font-style: italic;
+  padding-left: 16px;
+  border-left: 3px solid #1a1a1a;
+  margin: 0;
+}
+
+.card-detail-body .interpretation-block {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #1a1a1a;
+}
+.card-detail-body .interpretation-block p {
+  margin: 0 0 14px;
+}
+.card-detail-body .interpretation-block p:last-child {
+  margin-bottom: 0;
+}
+
+#spreadNarrative {
+  background: #fafaf7;
+  border: 1px solid #ececec;
+  border-left: 3px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 20px 24px;
+  font-family: Georgia, "Noto Serif SC", serif;
+}
+#spreadNarrative .narrative-lens-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+#spreadNarrative .narrative-text {
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+}
+
 /* ── v1.1 Deck Switcher ─────────────────────────────── */
 .deck-row {
   display: flex;
@@ -433,4 +576,179 @@ body {
   .reaction-widget-button { transition: none; }
   .reaction-widget-button:hover { transform: none; }
   .reaction-widget-panel { animation: none; }
+}
+
+/* ── Kai Stage System · 我是白沉浸式单页叙事 ─────────────── */
+.stage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--section-py) 1rem;
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--dur-stage) var(--ease-entrance),
+              transform var(--dur-stage) var(--ease-entrance);
+}
+
+.stage.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stage-number {
+  position: absolute;
+  top: var(--section-py);
+  left: 1rem;
+  font-family: var(--font-serif);
+  font-size: var(--font-caption);
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* Stage 间不规则虚线分隔 */
+.stage + .stage {
+  border-top: 1px dashed var(--ink);
+  border-image: repeating-linear-gradient(90deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 4px, var(--ink) 4px, var(--ink) 5px, transparent 5px, transparent 9px) 1;
+  opacity: 0.25;
+}
+
+/* 滚动指示器 */
+.scroll-cue {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--sp-lg) auto 0;
+  animation: scrollCuePulse 2s ease-in-out infinite;
+}
+.scroll-cue::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--ink);
+  border-radius: 50%;
+}
+@keyframes scrollCuePulse {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(6px); opacity: 0.5; }
+}
+
+/* 纸片 input */
+.paper-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: var(--sp-sm) 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-body);
+  color: var(--ink);
+  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.paper-input:focus {
+  outline: none;
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+.paper-input::placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+/* 纸片 chip */
+.paper-chip {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--font-caption);
+  color: var(--muted);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 180ms ease;
+  transform: rotate(-0.3deg);
+}
+.paper-chip:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  transform: rotate(0deg) translateY(-1px);
+}
+
+/* 门 SVG 按钮 */
+.door-btn {
+  width: 100%;
+  padding: var(--sp-md) var(--sp-lg);
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--font-subtitle);
+  cursor: pointer;
+  transition: all 300ms var(--ease-quiet);
+  position: relative;
+  overflow: hidden;
+}
+.door-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms var(--ease-quiet);
+  z-index: 0;
+}
+.door-btn:hover::before {
+  transform: scaleX(1);
+}
+.door-btn:hover {
+  color: var(--bg);
+}
+.door-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+/* 半开文件夹 SVG 容器 */
+.folder-hero {
+  width: 180px;
+  height: 140px;
+  margin: 0 auto var(--sp-lg);
+  opacity: 0.9;
+}
+
+/* 纸纹理 */
+.paper-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* modal 微旋转 — 像一张纸片被放在桌上 */
+#cardDetailModal > div:last-child,
+#dialogueModal > div:last-child,
+#deckDrawer > div:last-child {
+  transform: rotate(-0.3deg);
+}
+#reactionWidget > div {
+  transform: rotate(-0.3deg);
+}
+
+@media (max-width: 768px) {
+  .stage { padding: 64px 1rem; min-height: auto; }
+  .stage-number { top: 32px; }
+  .folder-hero { width: 140px; height: 110px; }
+  .door-btn { padding: var(--sp-sm) var(--sp-md); }
 }

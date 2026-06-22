@@ -32,6 +32,21 @@
     bindEvents();
     bindOnboarding();
 
+    // 桌面端打字机效果
+    if (window.Typed && window.innerWidth > 768) {
+      const heroEl = document.querySelector('#introSection h2');
+      if (heroEl) {
+        const txt = heroEl.textContent;
+        heroEl.textContent = '';
+        new Typed(heroEl, {
+          strings: [txt],
+          typeSpeed: 60,
+          showCursor: false,
+          onComplete: () => { heroEl.style.minHeight = 'auto'; }
+        });
+      }
+    }
+
     // 决定首屏：
     // 1) 没 activeDeck 且没 onboardedAt -> 弹引导墙
     // 2) activeDeck 是 system-default / seed -> 直接抽牌（mode banner 视情况）
@@ -49,6 +64,9 @@
     } else {
       $('drawSection').classList.remove('hidden');
     }
+    // stage 入场动画
+    document.querySelectorAll('.stage').forEach(s => s.classList.add('is-visible'));
+    initStageObserver();
     renderDeckStageHint();
   }
 
@@ -96,6 +114,9 @@
       const styleVal = data.user?.style || 'gentle';
       $('styleSelect').value = styleVal;
       const sm = $('styleSelectMobile'); if (sm) sm.value = styleVal;
+      const lensVal = data.user?.lens || 'jung';
+      const ls = $('lensSelect'); if (ls) ls.value = lensVal;
+      const lsm = $('lensSelectMobile'); if (lsm) lsm.value = lensVal;
       if (data.userIdShort) {
         const badge = $('userIdBadge');
         badge.textContent = data.userIdShort;
@@ -170,6 +191,31 @@
       });
     }
 
+    const lensSelect = $('lensSelect');
+    if (lensSelect) {
+      lensSelect.addEventListener('change', async (e) => {
+        const v = e.target.value;
+        const lsm = $('lensSelectMobile'); if (lsm) lsm.value = v;
+        await fetch('/api/v2/me/lens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lens: v })
+        });
+      });
+    }
+    const lensSelectMobile = $('lensSelectMobile');
+    if (lensSelectMobile) {
+      lensSelectMobile.addEventListener('change', async (e) => {
+        const v = e.target.value;
+        const ls = $('lensSelect'); if (ls) ls.value = v;
+        await fetch('/api/v2/me/lens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lens: v })
+        });
+      });
+    }
+
     // 汉堡菜单切换
     const navToggle = $('navToggle');
     const navMenu = $('navMenu');
@@ -213,9 +259,14 @@
 
     $('qInput1').addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        handleDraw();
+        if (e.metaKey || e.ctrlKey) {
+          handleDraw();
+        } else {
+          const s3 = $('stage3');
+          if (s3) s3.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     });
     document.querySelectorAll('.question-example').forEach(btn => {
@@ -491,7 +542,7 @@
     $('drawContext').classList.remove('hidden');
     $('drawContext').innerHTML = renderDrawContext(question, spread);
     $('drawStatus').classList.remove('hidden');
-    $('drawStatus').textContent = '正在从你过去的笔记里抽出一段…';
+    $('drawStatus').innerHTML = '<div class="flex items-center justify-center gap-3"><div class="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div><span>正在从你过去的笔记里抽出一段…</span></div>';
     $('cardsContainer').innerHTML = '';
     closeReactionWidget();
     $('reactionWidget')?.classList.add('hidden');
@@ -511,9 +562,17 @@
       const dynamicTitles = spread === 'single'
         ? [data.dynamicTitle || '（待命名）']
         : (data.dynamicTitles || cards.map(() => '（待命名）'));
+      const sharpQuestions = spread === 'single'
+        ? [data.sharpQuestion || '']
+        : (data.sharpQuestions || cards.map(() => ''));
+      const interpretations = spread === 'single'
+        ? [data.interpretation || '']
+        : (data.interpretations || cards.map(() => ''));
       // 只用 dynamicTitle，不污染 card.title
       cards.forEach((c, i) => {
         c._dynamicTitle = dynamicTitles[i];
+        c._sharpQuestion = sharpQuestions[i] || '';
+        c._interpretation = interpretations[i] || '';
         c._deckId = state.activeDeck?.id || null;
       });
       state.currentCards = cards;
@@ -523,18 +582,23 @@
         ? '你最近抽过的卡都已经在你脑子里了——这次允许重逢一张已经见过的。'
         : '牌已经翻开。先看抽象的标题，原文藏在翻面后。';
       renderCards(cards);
+      renderSpreadNarrative(spread === 'three' ? (data.narrative || '') : '', data.lens);
       // 抽牌后让翻面动画 + 第一反应输入框并行出现，不再死等所有卡翻完
       await sleep(600);
       $('drawStatus').classList.add('hidden');
 
-      // 默认陌生化展示。给用户输入"第一反应"的入口（右下浮窗按钮态）
+      // stage 4 入场
+      $('cardsArea').classList.add('is-visible');
+      // 自动展开反应浮窗 + 滚动到 stage 5
       $('reactionWidget')?.classList.remove('hidden');
-      collapseReactionWidget();
+      expandReactionWidget();
+      const s5 = $('stage5-anchor');
+      if (s5) s5.scrollIntoView({ behavior: 'smooth', block: 'start' });
       const ri = $('reactionInput');
       if (ri) ri.value = '';
     } catch (e) {
-      $('drawStatus').classList.add('hidden');
-      $('drawContext').innerHTML = `<div class="text-red-600 inline-block px-4 py-3 rounded-2xl bg-red-50 border border-red-200">✗ ${escapeHtml(e.message)}</div>`;
+      $('drawStatus').innerHTML = `<div class="text-red-600 inline-block px-4 py-3 rounded-2xl bg-red-50 border border-red-200">✗ ${escapeHtml(e.message)}</div>`;
+      $('cardsArea').classList.add('is-visible');
     } finally {
       state.isDrawing = false;
       setDrawBusy(false);
@@ -548,7 +612,7 @@
     redrawBtn.disabled = busy;
     drawBtn.classList.toggle('opacity-50', busy);
     redrawBtn.classList.toggle('opacity-50', busy);
-    drawBtn.querySelector('span').textContent = busy ? '抽牌中…' : '抽牌';
+    drawBtn.querySelector('span').textContent = busy ? '打开中…' : '打开';
   }
 
   // ── 反应浮窗 ──────────────────────────────
@@ -591,13 +655,8 @@
   function renderCards(cards) {
     const list = $('cardsContainer');
     list.innerHTML = '';
-    // 按卡数设置 grid 列数（彻底消除 flex-wrap 第三张被推到第二行）
-    list.classList.remove('grid-cols-1', 'md:grid-cols-3', 'max-w-fit');
-    if (cards.length >= 3) {
-      list.classList.add('grid-cols-1', 'md:grid-cols-3', 'max-w-fit');
-    } else {
-      list.classList.add('grid-cols-1', 'max-w-fit');
-    }
+    // 竖排单列（v3.0 沉浸式叙事）
+    list.className = 'flex flex-col items-center gap-10 mx-auto mb-10';
     cards.forEach((card, idx) => {
       const slot = document.createElement('div');
       slot.className = 'flex flex-col items-center';
@@ -611,26 +670,37 @@
       wrapper.className = 'card-wrapper cursor-pointer';
       wrapper.dataset.cardId = card.id;
       wrapper.title = '点击查看完整内容';
-      const orientationMark = card.orientation === 'reversed'
-        ? `<span class="text-[10px] px-1.5 py-0.5 border border-black/40 rounded text-black/70 ml-2">逆位</span>`
-        : '';
+      const suit = escapeAttr(card.suit);
+      const isRev = card.orientation === 'reversed';
+      const arcanaLabel = { major: '大阿尔卡那', court: '宫廷牌', pip: '数字牌' }[card.arcana] || '';
+      const backSvgs = {
+        'sword-of-self':     '<svg viewBox="0 0 64 64"><line x1="32" y1="8" x2="32" y2="56"/><line x1="24" y1="16" x2="40" y2="16"/></svg>',
+        'mirror-of-world':   '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24"/><rect x="24" y="24" width="16" height="16" rx="2"/></svg>',
+        'compass-of-method': '<svg viewBox="0 0 64 64"><line x1="32" y1="8" x2="32" y2="56"/><line x1="8" y1="32" x2="56" y2="32"/><circle cx="32" cy="32" r="4"/><circle cx="32" cy="16" r="2"/><circle cx="32" cy="48" r="2"/><circle cx="16" cy="32" r="2"/><circle cx="48" cy="32" r="2"/></svg>',
+        'ship-of-action':    '<svg viewBox="0 0 64 64"><polygon points="32,8 56,48 8,48"/><path d="M12 52 Q32 58 52 52"/></svg>',
+        'seed-of-growth':    '<svg viewBox="0 0 64 64"><rect x="20" y="16" width="24" height="24" rx="2"/><path d="M28 40 Q24 52 20 56"/><path d="M32 40 Q32 54 32 58"/><path d="M36 40 Q40 52 44 56"/></svg>'
+      };
+      const objSvgs = {
+        'sword-of-self':     '<svg viewBox="0 0 40 40"><rect x="4" y="4" width="32" height="32" rx="2"/><line x1="20" y1="4" x2="20" y2="36"/></svg>',
+        'mirror-of-world':   '<svg viewBox="0 0 40 40"><rect x="4" y="8" width="32" height="28" rx="2"/><line x1="4" y1="14" x2="36" y2="14"/><circle cx="32" cy="11" r="1.5"/><circle cx="20" cy="24" r="8"/><line x1="12" y1="32" x2="28" y2="32"/></svg>',
+        'compass-of-method': '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><line x1="20" y1="6" x2="20" y2="34"/><line x1="6" y1="20" x2="34" y2="20"/><circle cx="20" cy="20" r="3"/></svg>',
+        'ship-of-action':    '<svg viewBox="0 0 40 40"><polygon points="20,6 34,30 6,30"/><rect x="12" y="18" width="8" height="8" rx="1"/><rect x="22" y="18" width="8" height="8" rx="1"/><path d="M8 34 Q20 38 32 34"/></svg>',
+        'seed-of-growth':    '<svg viewBox="0 0 40 40"><rect x="10" y="8" width="20" height="20" rx="2"/><path d="M18 28 Q14 34 12 38"/><path d="M20 28 Q20 36 20 38"/><path d="M22 28 Q26 34 28 38"/></svg>'
+      };
       wrapper.innerHTML = `
         <div class="card-inner">
           <div class="card-face card-back">
-            <svg class="card-back-pattern" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
+            <div class="card-back-pattern">${backSvgs[suit] || backSvgs['sword-of-self']}</div>
           </div>
-          <div class="card-face card-front suit-${escapeAttr(card.suit)}${card.orientation === 'reversed' ? ' is-reversed' : ''}">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs text-tarot-muted">过去的你${orientationMark}</span>
-            </div>
-            <h3 class="font-serif font-bold text-2xl text-black mb-3 leading-snug">${escapeHtml(card._dynamicTitle || card.title || '—')}</h3>
-            <div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed italic">
-              ${renderCardFrontTeaser(card)}
-            </div>
+          <div class="card-face card-front suit-${suit}${isRev ? ' is-reversed' : ''}">
+            <div class="card-corner-tl">${arcanaLabel}${arcanaLabel ? ' · ' : ''}${escapeHtml(card.positionName || '')}</div>
+            <div class="suit-object">${objSvgs[suit] || objSvgs['sword-of-self']}</div>
+            <h3 class="font-serif font-bold text-2xl text-black mb-3 leading-snug" style="margin-top:24px">${escapeHtml(card._dynamicTitle || card.title || '—')}</h3>
+            ${card._sharpQuestion
+              ? `<div class="sharp-question-box mb-2"><div class="text-[10px] text-tarot-muted mb-1 tracking-wider">尖锐问题</div><div class="text-sm text-black leading-relaxed">${escapeHtml(card._sharpQuestion)}</div></div>`
+              : `<div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed italic">${renderCardFrontTeaser(card)}</div>`}
             <div class="mt-3 pt-2 text-[11px] text-tarot-muted text-center border-t border-tarot-border">
-              翻面看原文 · 来源
+              翻面看原文
             </div>
           </div>
         </div>
@@ -645,6 +715,13 @@
         openCardDetail(card);
       });
     });
+
+    // 3D tilt（桌面端）
+    if (window.VanillaTilt && window.innerWidth > 768) {
+      VanillaTilt.init(document.querySelectorAll('.card-wrapper'), {
+        max: 4, glare: false, scale: 1.02, speed: 400
+      });
+    }
   }
 
   // 卡正面只展示一行抽象提示，原文 / 来源 / 日期都藏在翻面后（陌生化）
@@ -764,6 +841,16 @@
     const parts = [];
     const fullText = card.fullPassage || card.passage || '';
 
+    if (card._sharpQuestion) {
+      parts.push(`<span class="section-label">尖锐问题</span>`);
+      parts.push(`<p class="sharp-question-detail">${escapeHtml(card._sharpQuestion)}</p>`);
+    }
+
+    if (card._interpretation) {
+      parts.push(`<span class="section-label">牌面解读</span>`);
+      parts.push(`<div class="interpretation-block">${formatPassage(card._interpretation)}</div>`);
+    }
+
     if (card.summary) {
       parts.push(`<span class="section-label">核心</span>`);
       parts.push(`<p class="lead">${escapeHtml(card.summary)}</p>`);
@@ -789,6 +876,22 @@
     }
 
     return parts.join('');
+  }
+
+  function renderSpreadNarrative(narrative, lens) {
+    const box = $('spreadNarrative');
+    if (!box) return;
+    if (!narrative) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+    const lensLabel = lens === 'ifs' ? 'IFS 视角' : lens === 'narrative' ? '叙事疗法视角' : '荣格视角';
+    box.innerHTML = `
+      <div class="narrative-lens-tag">${escapeHtml(lensLabel)}</div>
+      <div class="narrative-text">${escapeHtml(narrative)}</div>
+    `;
+    box.classList.remove('hidden');
   }
 
   function formatPassage(text) {
@@ -1034,6 +1137,17 @@
   function removeLoading() {
     const el = $('dialogueScroll').querySelector('[data-loading]');
     if (el) el.remove();
+  }
+
+  // ── Stage Observer ────────────────────────────────────
+  function initStageObserver() {
+    if (!window.IntersectionObserver) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('is-visible');
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+    document.querySelectorAll('.stage').forEach(s => observer.observe(s));
   }
 
   // ── utils ───────────────────────────────────────────
