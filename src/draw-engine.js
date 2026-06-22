@@ -170,15 +170,26 @@ function drawThree(deckCards, excludeIds = new Set(), questionEmbedding = null, 
     { key: 'future', name: '未来' }
   ];
 
-  const sessionExclude = new Set(excludeIds);
+  const drawnInSession = new Set();
   const result = [];
   for (const pos of positions) {
-    const remaining = deckCards.filter(c => !sessionExclude.has(c.id));
+    let remaining = deckCards.filter(c => !drawnInSession.has(c.id) && !excludeIds.has(c.id));
+    let recycled = false;
+    if (remaining.length === 0) {
+      remaining = deckCards.filter(c => !drawnInSession.has(c.id));
+      recycled = true;
+    }
     if (remaining.length === 0) break;
     const picked = drawSingle(remaining, new Set(), questionEmbedding, feedback);
     if (!picked) break;
-    result.push({ ...picked, position: pos.key, positionName: pos.name });
-    sessionExclude.add(picked.id);
+    const meta = picked._drawMeta || {};
+    result.push({
+      ...picked,
+      position: pos.key,
+      positionName: pos.name,
+      _drawMeta: { ...meta, recycled: meta.recycled || recycled }
+    });
+    drawnInSession.add(picked.id);
   }
   return result;
 }
