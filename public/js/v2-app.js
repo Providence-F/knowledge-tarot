@@ -32,8 +32,8 @@
     bindEvents();
     bindOnboarding();
 
-    // 桌面端打字机效果
-    if (window.Typed && window.innerWidth > 768) {
+    // 桌面端打字机效果（headless 模式禁用，避免截图截断）
+    if (window.Typed && window.innerWidth > 768 && !navigator.webdriver) {
       const heroEl = document.querySelector('#introSection h2');
       if (heroEl) {
         const txt = heroEl.textContent;
@@ -64,8 +64,7 @@
     } else {
       $('drawSection').classList.remove('hidden');
     }
-    // stage 入场动画
-    document.querySelectorAll('.stage').forEach(s => s.classList.add('is-visible'));
+    // stage 入场动画（由 IntersectionObserver 驱动滚动触发）
     initStageObserver();
     renderDeckStageHint();
   }

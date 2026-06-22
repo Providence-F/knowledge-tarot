@@ -61,21 +61,26 @@ body {
 .spread-btn {
   padding: 1.25rem;
   border-radius: 1rem;
-  border: 1px solid var(--tarot-border);
-  background: var(--tarot-card);
-  color: var(--tarot-ivory);
+  border: 2px solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
   text-align: center;
   transition: all 0.2s ease;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .spread-btn:hover {
-  border-color: #000000;
+  background: var(--accent);
 }
 
 .spread-btn.active {
-  border-color: #000000;
-  background: #f5f5f5;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.spread-btn svg {
+  stroke: var(--ink);
 }
 
 /* ── Card Flip ─────────────────────────────────────────── */
@@ -645,7 +650,7 @@ body {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid #cccccc;
   border-radius: 0;
   padding: var(--sp-sm) 0;
   font-family: var(--font-sans);
@@ -656,12 +661,13 @@ body {
 .paper-input:focus {
   outline: none;
   border-color: var(--ink);
+  border-bottom-width: 2px;
   transform: translateY(-2px);
   box-shadow: var(--shadow-card);
 }
 .paper-input::placeholder {
   color: var(--muted);
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 /* 纸片 chip */
@@ -751,4 +757,5 @@ body {
   .stage-number { top: 32px; }
   .folder-hero { width: 140px; height: 110px; }
   .door-btn { padding: var(--sp-sm) var(--sp-md); }
+  .spread-grid { grid-template-columns: 1fr !important; }
 }
