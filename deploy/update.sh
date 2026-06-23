@@ -35,11 +35,11 @@ chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 sudo -u "$APP_USER" git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 
 # ── 2. 拉取最新代码 ───────────────────────────────────────
-log "尝试 git pull..."
-if sudo -u "$APP_USER" bash -c "cd $APP_DIR && git -c http.version=HTTP/1.1 pull origin $BRANCH"; then
+log "尝试 git pull（最多 30 秒）..."
+if sudo -u "$APP_USER" bash -c "cd $APP_DIR && timeout 30 git -c http.version=HTTP/1.1 pull origin $BRANCH"; then
   log "git pull 成功"
 else
-  warn "git pull 失败，使用 curl raw 文件回退"
+  warn "git pull 失败或超时，使用 curl raw 文件回退"
   sudo -u "$APP_USER" bash -c "
     cd $APP_DIR
     curl -fsSL -o public/css/style.css '$REPO/raw/$BRANCH/public/css/style.css'
