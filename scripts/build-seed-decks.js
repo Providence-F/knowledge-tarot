@@ -63,7 +63,7 @@ function createCard(slug, idx, contentType, title, summary, passage, tags = []) 
     summary,
     passage,
     fullPassage: passage,
-    insights: contentType === 'analysis' ? extractInsights(passage) : null,
+    insights: null,
     suit,
     suitName,
     source: { type: 'seed', path: null, label: slug },
@@ -168,15 +168,11 @@ function buildHarryPotterCards() {
     const title = `${scene}：${shortTitle(insight)}`;
     const summary = `${scene}把《${book}》里的一个成长问题推到台前：${insight}`;
     const passage = [
-      `出处：《哈利波特与${book}》｜原版出版：${year}`,
-      `场景：${scene}`,
-      `背景：${background}`,
-      `金句锚点（转述）：${insight}`,
+      `《哈利波特与${book}》｜${year}`,
       '',
-      `牌面解读：这张牌不是在问你像不像哈利，而是在问你是否正在经历同一种结构。`,
-      `如果你把它抽到现在的问题里，它通常指向：身份、恐惧、选择、忠诚、失去或承担。`,
+      `${scene}。${background}`,
       '',
-      `尖锐问题：你现在坚持的判断，是出于勇气，还是只是害怕承认自己看错了？`
+      `${insight}`
     ].join('\n');
     return createCard('harry-potter', idx, 'reflection', title, summary, passage, ['harry-potter', book, scene]);
   });
@@ -189,15 +185,14 @@ function buildWorldDecisionCards() {
     const [event, time, arena, background, options, outcome, lesson, quote, quoteNote] = r;
     const title = `${event}：${shortTitle(lesson)}`;
     const summary = `${time}，${arena}的关键选择：${lesson}`;
-    // 扩充 passage：把骨架字段融合成流畅叙事
+    // 把骨架字段融合成流畅叙事，去标签化
     let passage = '';
     passage += `${time}，${arena}。${background}\n\n`;
     if (quote) {
-      passage += `「${quote}」——${quoteNote}\n\n`;
+      passage += `${quote}——${quoteNote}\n\n`;
     }
-    passage += `当时摆在面前的选项是：${options}。结果是${outcome}\n\n`;
-    passage += `可迁移判断：${lesson}\n\n`;
-    passage += `抽到这张牌时，不要问"谁对谁错"，先问"当时他们以为自己在解决什么问题"。`;
+    passage += `${options} 最终，${outcome}\n\n`;
+    passage += `${lesson}`;
     return createCard('world-decisions', idx, 'analysis', title, summary, passage, ['history', arena, time]);
   });
 }

@@ -840,38 +840,38 @@
     const parts = [];
     const fullText = card.fullPassage || card.passage || '';
 
-    if (card._sharpQuestion) {
-      parts.push(`<span class="section-label">尖锐问题</span>`);
-      parts.push(`<p class="sharp-question-detail">${escapeHtml(card._sharpQuestion)}</p>`);
-    }
-
-    if (card._interpretation) {
-      parts.push(`<span class="section-label">牌面解读</span>`);
-      parts.push(`<div class="interpretation-block">${formatPassage(card._interpretation)}</div>`);
-    }
-
+    // 1. 提要
     if (card.summary) {
-      parts.push(`<span class="section-label">核心</span>`);
+      parts.push(`<span class="section-label">提要</span>`);
       parts.push(`<p class="lead">${escapeHtml(card.summary)}</p>`);
     }
 
-    if (card.contentType === 'analysis' && Array.isArray(card.insights) && card.insights.length) {
-      parts.push(`<span class="section-label">要点</span>`);
-      parts.push(card.insights.map(s =>
-        `<div class="insight-card">${escapeHtml(s)}</div>`
-      ).join(''));
-    }
-
+    // 2. 来龙去脉 / 故事
     if (fullText && fullText.trim()) {
-      parts.push(`<span class="section-label">${card.contentType === 'analysis' ? '原文' : '正文'}</span>`);
+      parts.push(`<span class="section-label">${card.contentType === 'analysis' ? '来龙去脉' : '故事'}</span>`);
       parts.push(`<div class="passage-block">${formatPassage(fullText)}</div>`);
-    } else if (parts.length === 0) {
-      parts.push(`<p class="text-tarot-muted">这张牌还没有正文内容</p>`);
     }
 
+    // 3. 照见（牌面解读）
+    if (card._interpretation) {
+      parts.push(`<span class="section-label">照见</span>`);
+      parts.push(`<div class="interpretation-block">${formatPassage(card._interpretation)}</div>`);
+    }
+
+    // 4. 追问（尖锐问题）
+    if (card._sharpQuestion) {
+      parts.push(`<span class="section-label">追问</span>`);
+      parts.push(`<p class="sharp-question-detail">${escapeHtml(card._sharpQuestion)}</p>`);
+    }
+
+    // 5. 来源
     if (card.source && (card.source.label || card.source.path)) {
       const src = card.source.label || card.source.path;
       parts.push(`<div class="source-line">来源：<code>${escapeHtml(src)}</code></div>`);
+    }
+
+    if (parts.length === 0) {
+      parts.push(`<p class="text-tarot-muted">这张牌还没有正文内容</p>`);
     }
 
     return parts.join('');

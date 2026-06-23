@@ -4,7 +4,7 @@
   --bg:        #ffffff;
   --ink:       #0a0a0a;
   --text:      #1a1a1a;
-  --muted:     #888888;
+  --muted:     #555555;
   --border:    #e5e5e5;
   --accent:    #f5f5f5;
   --overlay:   rgba(0,0,0,0.5);
@@ -295,13 +295,6 @@ body {
   .card-front { padding: 1.25rem; }
   .card-front h3 { font-size: 1.05rem; line-height: 1.35; margin-bottom: 0.5rem; }
 }
-@media (max-width: 360px) {
-  .card-wrapper {
-    width: 260px;
-    height: 372px;
-  }
-  .card-front { padding: 1rem; }
-}
 
 /* ── Empty State ───────────────────────────────────────── */
 .empty-state {
@@ -431,6 +424,9 @@ body {
 }
 
 .card-detail-body .interpretation-block {
+  background: #fafaf9;
+  border-radius: 8px;
+  padding: 16px 18px;
   font-size: 15px;
   line-height: 1.85;
   color: #1a1a1a;
@@ -616,9 +612,7 @@ body {
 
 /* Stage 间不规则虚线分隔 */
 .stage + .stage {
-  border-top: 1px dashed var(--ink);
-  border-image: repeating-linear-gradient(90deg, var(--ink) 0, var(--ink) 1px, transparent 1px, transparent 4px, var(--ink) 4px, var(--ink) 5px, transparent 5px, transparent 9px) 1;
-  opacity: 0.25;
+  border-top: 1px dashed var(--border);
 }
 
 /* 滚动指示器 */
@@ -650,7 +644,7 @@ body {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 2px solid #cccccc;
+  border-bottom: 2px solid #aaaaaa;
   border-radius: 0;
   padding: var(--sp-sm) 0;
   font-family: var(--font-sans);
@@ -666,18 +660,18 @@ body {
   box-shadow: var(--shadow-card);
 }
 .paper-input::placeholder {
-  color: var(--muted);
-  opacity: 0.6;
+  color: #777777;
+  opacity: 1;
 }
 
 /* 纸片 chip */
 .paper-chip {
   display: inline-block;
   padding: 6px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid #cccccc;
   border-radius: var(--r-pill);
   font-size: var(--font-caption);
-  color: var(--muted);
+  color: #555555;
   background: var(--bg);
   cursor: pointer;
   transition: all 180ms ease;
@@ -724,6 +718,26 @@ body {
   z-index: 1;
 }
 
+/* 手绘下划线 — 像随手画的 */
+.hand-underline {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: rgba(10,10,10,0.22);
+  text-underline-offset: 4px;
+}
+
+/* spread-btn 门推开动画 */
+.spread-btn svg line,
+.spread-btn svg rect {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 500ms ease;
+}
+.spread-btn:hover svg line,
+.spread-btn:hover svg rect {
+  stroke-dashoffset: 40;
+}
+
 /* 半开文件夹 SVG 容器 */
 .folder-hero {
   width: 180px;
@@ -758,4 +772,11 @@ body {
   .folder-hero { width: 140px; height: 110px; }
   .door-btn { padding: var(--sp-sm) var(--sp-md); }
   .spread-grid { grid-template-columns: 1fr !important; }
+  .card-wrapper {
+    width: 260px;
+    height: 372px;
+    max-width: 100%;
+  }
+  .card-front { padding: 1rem; }
+  .card-front h3 { font-size: 1.05rem; line-height: 1.35; margin-bottom: 0.5rem; }
 }

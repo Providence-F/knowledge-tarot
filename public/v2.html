@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260622v3">
+  <link rel="stylesheet" href="css/style.css?v=20260622v5">
   <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
   <script src="https://unpkg.com/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
   <script>
@@ -18,7 +18,7 @@
           colors: {
             tarot: {
               bg: '#ffffff', card: '#ffffff', gold: '#000000',
-              ivory: '#1a1a1a', muted: '#888888',
+              ivory: '#1a1a1a', muted: '#555555',
               border: '#e5e5e5', accent: '#f5f5f5'
             }
           },
@@ -250,7 +250,7 @@
             <path d="M70 60 Q90 80 110 60"/>
           </svg>
         </div>
-        <h2 class="font-serif text-black mb-4" style="font-size:var(--font-hero)">像一个问题被放在这里。</h2>
+        <h2 class="font-serif text-black mb-4 hand-underline" style="font-size:var(--font-hero)">像一个问题被放在这里。</h2>
         <p class="text-tarot-muted max-w-xl mx-auto mb-8" style="font-size:var(--font-body);line-height:var(--lh-loose)">
           你写过的东西，在等你回来。<span style="font-family:var(--font-hand);font-size:20px;margin-left:6px;opacity:0.6">waiting.</span>
         </p>
@@ -263,7 +263,7 @@
       <!-- Stage 2: 三步问题输入 -->
       <section id="stage2" class="stage">
         <div class="stage-number">II</div>
-        <h2 class="font-serif text-black mb-2 text-center" style="font-size:var(--font-title)">三个问题，放在这里</h2>
+        <h2 class="font-serif text-black mb-2 text-center hand-underline" style="font-size:var(--font-title)">三个问题，放在这里</h2>
         <p class="text-tarot-muted text-center mb-10" style="font-size:var(--font-body)">像刚刚有人离开，像某个决定还没发生</p>
         <div class="max-w-2xl mx-auto space-y-8">
           <div>
@@ -289,7 +289,7 @@
       <!-- Stage 3: 牌阵选择 -->
       <section id="stage3" class="stage text-center">
         <div class="stage-number">III</div>
-        <h2 class="font-serif text-black mb-8" style="font-size:var(--font-title)">选一扇门</h2>
+        <h2 class="font-serif text-black mb-8 hand-underline" style="font-size:var(--font-title)">选一扇门</h2>
         <div class="spread-grid max-w-2xl mx-auto grid grid-cols-2 gap-4 mb-8">
           <button class="spread-btn active" data-spread="single">
             <svg class="mx-auto mb-3" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1">
@@ -458,6 +458,6 @@
     </div>
   </div>
 
-  <script src="js/v2-app.js?v=20260622b"></script>
+  <script src="js/v2-app.js?v=20260622v5"></script>
 </body>
 </html>
