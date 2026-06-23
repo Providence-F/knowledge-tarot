@@ -664,6 +664,32 @@ body {
   opacity: 1;
 }
 
+/* 纸片 textarea */
+.paper-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #aaaaaa;
+  border-radius: 0;
+  padding: var(--sp-sm) 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  resize: vertical;
+}
+.paper-textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+.paper-textarea::placeholder {
+  color: #777777;
+  opacity: 1;
+}
+
 /* 纸片 chip */
 .paper-chip {
   display: inline-block;
@@ -716,6 +742,9 @@ body {
 .door-btn span {
   position: relative;
   z-index: 1;
+}
+.door-btn.auto {
+  width: auto;
 }
 
 /* 手绘下划线 — 像随手画的 */

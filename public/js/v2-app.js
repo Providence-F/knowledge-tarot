@@ -61,6 +61,7 @@
       $('drawSection').classList.remove('hidden');
     } else if (state.deckSize === 0 && state.activeDeckKind === 'owned') {
       $('emptyState').classList.remove('hidden');
+      $('emptyState').classList.add('is-visible');
     } else {
       $('drawSection').classList.remove('hidden');
     }
@@ -366,7 +367,7 @@
 
     function row(d, opts = {}) {
       const isActive = d.id === activeId || d.isActive;
-      const badge = opts.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-tarot-accent text-tarot-muted ml-1">${opts.badge}</span>` : '';
+      const badge = opts.badge ? `<span class="text-[10px] px-1.5 py-0.5 border border-tarot-border ml-1" style="color:var(--muted)">${opts.badge}</span>` : '';
       const actions = opts.kind === 'owned'
         ? `<div class="deck-row-actions">
             ${isActive ? '<span class="deck-row-tick">●</span>' : ''}
@@ -541,7 +542,7 @@
     $('drawContext').classList.remove('hidden');
     $('drawContext').innerHTML = renderDrawContext(question, spread);
     $('drawStatus').classList.remove('hidden');
-    $('drawStatus').innerHTML = '<div class="flex items-center justify-center gap-3"><div class="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div><span>正在从你过去的笔记里抽出一段…</span></div>';
+    $('drawStatus').innerHTML = '<div class="flex items-center justify-center gap-3"><div class="w-4 h-4 border-2 rounded-full animate-spin" style="border-color:#e5e5e5;border-top-color:var(--ink)"></div><span>正在从你过去的笔记里抽出一段…</span></div>';
     $('cardsContainer').innerHTML = '';
     closeReactionWidget();
     $('reactionWidget')?.classList.add('hidden');
@@ -596,7 +597,7 @@
       const ri = $('reactionInput');
       if (ri) ri.value = '';
     } catch (e) {
-      $('drawStatus').innerHTML = `<div class="text-red-600 inline-block px-4 py-3 rounded-2xl bg-red-50 border border-red-200">✗ ${escapeHtml(e.message)}</div>`;
+      $('drawStatus').innerHTML = `<div class="inline-block px-4 py-3 border border-tarot-border" style="color:var(--muted)">✗ ${escapeHtml(e.message)}</div>`;
       $('cardsArea').classList.add('is-visible');
     } finally {
       state.isDrawing = false;
@@ -644,8 +645,8 @@
       ? `<div class="text-black font-medium">${escapeHtml(text)}</div>`
       : `<div class="text-black font-medium">没有具体问题，作为一次随机重逢</div>`;
     return `
-      <div class="inline-block max-w-full px-4 py-3 rounded-2xl bg-white border border-tarot-border text-left">
-        <div class="text-[11px] text-tarot-muted mb-1">${escapeHtml(deckName)} · ${spreadName}</div>
+      <div class="inline-block max-w-full px-4 py-3 border border-tarot-border text-left" style="background:var(--bg)">
+        <div class="text-[11px] mb-1" style="color:var(--muted)">${escapeHtml(deckName)} · ${spreadName}</div>
         ${q}
       </div>
     `;
@@ -696,9 +697,9 @@
             <div class="suit-object">${objSvgs[suit] || objSvgs['sword-of-self']}</div>
             <h3 class="font-serif font-bold text-2xl text-black mb-3 leading-snug" style="margin-top:24px">${escapeHtml(card._dynamicTitle || card.title || '—')}</h3>
             ${card._sharpQuestion
-              ? `<div class="sharp-question-box mb-2"><div class="text-[10px] text-tarot-muted mb-1 tracking-wider">尖锐问题</div><div class="text-sm text-black leading-relaxed">${escapeHtml(card._sharpQuestion)}</div></div>`
-              : `<div class="flex-1 overflow-hidden text-sm text-tarot-ivory leading-relaxed italic">${renderCardFrontTeaser(card)}</div>`}
-            <div class="mt-3 pt-2 text-[11px] text-tarot-muted text-center border-t border-tarot-border">
+              ? `<div class="sharp-question-box mb-2"><div class="text-[10px] mb-1 tracking-wider" style="color:var(--muted)">追问</div><div class="text-sm text-black leading-relaxed">${escapeHtml(card._sharpQuestion)}</div></div>`
+              : `<div class="flex-1 overflow-hidden text-sm leading-relaxed italic" style="color:var(--text)">${renderCardFrontTeaser(card)}</div>`}
+            <div class="mt-3 pt-2 text-[11px] text-center border-t border-tarot-border" style="color:var(--muted)">
               翻面看原文
             </div>
           </div>
@@ -923,7 +924,7 @@
     askBtn.disabled = true;
     askBtn.classList.add('opacity-60');
     $('aiBridge').classList.remove('hidden');
-    $('aiBridge').innerHTML = `<div class="flex items-center gap-3 text-tarot-muted py-2"><div class="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"></div><span>过去的你正在说话…</span></div>`;
+    $('aiBridge').innerHTML = `<div class="flex items-center gap-3 text-tarot-muted py-2"><div class="w-4 h-4 border-2 rounded-full animate-spin" style="border-color:#e5e5e5;border-top-color:var(--ink)"></div><span>过去的你正在说话…</span></div>`;
 
     const ctl = new AbortController();
     const timeoutId = setTimeout(() => ctl.abort('timeout'), 60000);
@@ -949,7 +950,7 @@
         : '';
       const continueBtn = data.question
         ? `<div class="pt-3 flex justify-end">
-             <button id="openDialogueBtn2" class="px-5 py-2 rounded-full bg-black text-white text-sm hover:bg-tarot-ivory transition">继续这个问题</button>
+             <button id="openDialogueBtn2" class="door-btn auto px-5 py-2 text-sm">继续这个问题</button>
            </div>`
         : '';
       $('aiBridge').innerHTML = ackHtml + qHtml + continueBtn;
@@ -962,7 +963,7 @@
       const msg = e.name === 'AbortError'
         ? '过去的你这次没接上（60 秒没响应）。可以再点一次"再聊聊"。'
         : e.message;
-      $('aiBridge').innerHTML = `<div class="text-red-600">✗ ${escapeHtml(msg)}</div>`;
+      $('aiBridge').innerHTML = `<div style="color:var(--muted)">✗ ${escapeHtml(msg)}</div>`;
     } finally {
       clearTimeout(timeoutId);
       askBtn.disabled = false;
@@ -1091,9 +1092,9 @@
       const node = document.createElement('div');
       node.className = 'flex justify-start';
       node.innerHTML = `
-        <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed bg-red-50 border border-red-200 text-red-700 flex items-center gap-3">
+        <div class="max-w-[80%] px-4 py-2.5 text-sm leading-relaxed border border-tarot-border flex items-center gap-3" style="color:var(--muted)">
           <span>（AI 暂时没接上）</span>
-          <button class="px-2 py-0.5 text-xs border border-red-300 rounded hover:bg-red-100 transition" data-action="retry-ai">重试</button>
+          <button class="px-2 py-0.5 text-xs border border-tarot-border hover:border-black transition" data-action="retry-ai" style="border-radius:var(--r-sm)">重试</button>
         </div>
       `;
       $('dialogueScroll').appendChild(node);
@@ -1124,9 +1125,9 @@
     node.className = `flex ${isAi ? 'justify-start' : 'justify-end'}`;
     if (loading) node.dataset.loading = '1';
     node.innerHTML = `
-      <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed
-        ${isAi ? 'bg-tarot-accent text-tarot-ivory' : 'bg-black text-white'}">
-        ${loading ? '<span class="opacity-50">…</span>' : escapeHtml(text)}
+      <div class="max-w-[80%] px-4 py-2.5 text-sm leading-relaxed"
+        style="${isAi ? 'border-left:2px solid var(--ink);padding-left:12px' : 'border-right:2px solid var(--ink);padding-right:12px;text-align:right'};color:var(--text)">
+        ${loading ? '<span style="opacity:0.5">…</span>' : escapeHtml(text)}
       </div>
     `;
     scroll.appendChild(node);
