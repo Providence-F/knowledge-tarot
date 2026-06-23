@@ -6,6 +6,26 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // 统一 toast（替代 alert）
+  function toast(msg, kind = 'info') {
+    let host = document.getElementById('toastHost');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'toastHost';
+      host.className = 'toast-host';
+      document.body.appendChild(host);
+    }
+    const el = document.createElement('div');
+    el.className = `toast toast-${kind}`;
+    el.textContent = msg;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('toast-show'));
+    setTimeout(() => {
+      el.classList.remove('toast-show');
+      setTimeout(() => el.remove(), 300);
+    }, 3200);
+  }
+
   let state = {
     deck: [],
     decksList: { owned: [], seeds: [], system: [], activeDeckId: null },
@@ -20,7 +40,7 @@
   async function init() {
     bindEvents();
     await Promise.all([loadDecksList(), loadDeck(), loadHistory(), loadDialogues(), loadAccount()]);
-    switchTab('decks');
+    switchTab('history');
   }
 
   function bindEvents() {
@@ -86,12 +106,12 @@
       const me = await meRes.json();
       const deckId = me.activeDeck?.id;
       if (!deckId || me.activeDeckKind === 'system-default' || me.activeDeckKind === 'seed') {
-        alert('当前是只读牌堆（系统兜底或示范牌堆），不能分享。请切到自己的牌堆后再试。');
+        toast('当前是只读牌堆（系统兜底或示范牌堆），不能分享。请切到自己的牌堆后再试。', 'warn');
         return;
       }
       await shareDeck(deckId);
     } catch (e) {
-      alert('网络错误：' + e.message);
+      toast('网络错误：' + e.message, 'error');
     }
   }
 
@@ -103,7 +123,7 @@
     });
     if (!r.ok) {
       const data = await r.json().catch(() => ({}));
-      alert('生成分享链接失败：' + (data.error || r.status));
+      toast('生成分享链接失败：' + (data.error || r.status), 'error');
       return;
     }
     const data = await r.json();
@@ -153,7 +173,7 @@
           <div class="deck-manager-section-title">${title}</div>
           <div class="p-5 border border-dashed border-tarot-border rounded-xl text-sm text-tarot-muted bg-white">
             <p class="mb-3">你还没有自己的牌堆。可以从示范牌堆克隆，或导入内容新建。</p>
-            <a href="v2-import.html" class="inline-flex px-3 py-2 text-xs bg-black text-white rounded-lg hover:bg-tarot-ivory transition">+ 新建 / 导入牌堆</a>
+            <a href="v2-import.html" class="btn-primary text-xs"><span>+ 新建 / 导入牌堆</span></a>
           </div>
         </section>
       `;
@@ -219,7 +239,7 @@
     const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}/activate`, { method: 'POST' });
     if (!r.ok) {
       const data = await r.json().catch(() => ({}));
-      alert('切换失败：' + (data.error || r.status));
+      toast('切换失败：' + (data.error || r.status), 'error');
       return;
     }
     await Promise.all([loadDecksList(), loadDeck()]);
@@ -231,7 +251,7 @@
     const r = await fetch(`/api/v2/seed-decks/${encodeURIComponent(seedId)}/clone`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      alert('克隆失败：' + (data.error || r.status));
+      toast('克隆失败：' + (data.error || r.status), 'error');
       return;
     }
     await fetch(`/api/v2/decks/${encodeURIComponent(data.deckId)}/activate`, { method: 'POST' });
@@ -249,7 +269,7 @@
     const r = await fetch(`/api/v2/decks/${encodeURIComponent(deckId)}`, { method: 'DELETE' });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      alert('删除失败：' + (data.error || r.status));
+      toast('删除失败：' + (data.error || r.status), 'error');
       return;
     }
     await Promise.all([loadDecksList(), loadDeck()]);

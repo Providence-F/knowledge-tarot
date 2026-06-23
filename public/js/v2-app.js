@@ -271,8 +271,15 @@
     });
     document.querySelectorAll('.question-example').forEach(btn => {
       btn.addEventListener('click', () => {
-        $('qInput1').value = btn.textContent.trim();
-        $('qInput1').focus();
+        const targetId = btn.dataset.target || 'qInput1';
+        const input = $(targetId);
+        if (!input) return;
+        input.value = btn.textContent.trim();
+        input.focus();
+        // active 反馈：同组其他 chip 取消激活
+        btn.parentElement?.querySelectorAll('.question-example').forEach(b => {
+          b.classList.toggle('is-active', b === btn);
+        });
       });
     });
 
@@ -579,8 +586,8 @@
       state.currentDrawnAt = data.drawnAt || null;
 
       $('drawStatus').textContent = data.recycled
-        ? '你最近抽过的卡都已经在你脑子里了——这次允许重逢一张已经见过的。'
-        : '牌已经翻开。先看抽象的标题，原文藏在翻面后。';
+        ? '你最近抽过的卡都已经在你脑子里了——这次允许重逢一张已经见过的。点一下牌背把它翻开。'
+        : '牌已经放下，背面朝上。点一下把它翻开。';
       renderCards(cards);
       renderSpreadNarrative(spread === 'three' ? (data.narrative || '') : '', data.lens);
       // 抽牌后让翻面动画 + 第一反应输入框并行出现，不再死等所有卡翻完
@@ -589,9 +596,9 @@
 
       // stage 4 入场
       $('cardsArea').classList.add('is-visible');
-      // 自动展开反应浮窗 + 滚动到 stage 5
+      // 反应浮窗默认折叠：让用户先读完叙事，再主动点开
       $('reactionWidget')?.classList.remove('hidden');
-      expandReactionWidget();
+      collapseReactionWidget();
       const s5 = $('stage5-anchor');
       if (s5) s5.scrollIntoView({ behavior: 'smooth', block: 'start' });
       const ri = $('reactionInput');
@@ -666,6 +673,9 @@
     const list = $('cardsContainer');
     list.innerHTML = '';
     const isThree = cards.length === 3;
+    // 三牌阵需要更宽 stage（260×3 + gap = 828px > content-max 720px）
+    const cardsArea = $('cardsArea');
+    if (cardsArea) cardsArea.classList.toggle('stage--wide', isThree);
     // 三牌阵横向排列，单牌保持竖排居中
     list.className = isThree
       ? 'spread-three flex flex-row flex-wrap items-start justify-center gap-6 mx-auto mb-10'
@@ -721,10 +731,35 @@
       slot.appendChild(wrapper);
       list.appendChild(slot);
 
-      setTimeout(() => wrapper.classList.add('flipped'), 200 + idx * 180);
+      // 入场 stagger（每张延后 260ms 出现，制造仪式感）
+      slot.style.opacity = '0';
+      slot.style.transform = 'translateY(20px)';
+      slot.style.transition = 'opacity 600ms var(--ease-entrance), transform 600ms var(--ease-entrance)';
+      const dealDelay = 120 + idx * (cards.length === 3 ? 260 : 180);
+      setTimeout(() => {
+        slot.style.opacity = '1';
+        slot.style.transform = 'translateY(0)';
+      }, dealDelay);
 
+      // P3-1 真翻牌：不再自动 flip。卡片入场后保持背面，由用户点击翻开。
+      // 单卡：直接监听点击。
+      // 三牌：点一张翻一张；当全部翻开，drawStatus 提示"再点一次看完整内容"。
       wrapper.addEventListener('click', () => {
-        if (!wrapper.classList.contains('flipped')) return;
+        if (!wrapper.classList.contains('flipped')) {
+          wrapper.classList.add('flipped');
+          // 全部翻开后切换提示
+          const allFlipped = Array.from(list.querySelectorAll('.card-wrapper'))
+            .every(w => w.classList.contains('flipped'));
+          if (allFlipped) {
+            const status = $('drawStatus');
+            if (status) {
+              status.classList.remove('hidden');
+              status.textContent = '再点一次卡片，看完整原文。';
+              setTimeout(() => status.classList.add('hidden'), 2400);
+            }
+          }
+          return;
+        }
         openCardDetail(card);
       });
     });

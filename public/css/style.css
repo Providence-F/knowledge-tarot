@@ -291,6 +291,13 @@ body {
   .shimmer-text { animation: none; }
 }
 
+/* ── Paper Tilt Modal（修复 inline transform 覆盖 -translate-x-1/2 导致 modal 偏离居中、close 按钮被推出视口的 bug）
+   Tailwind CDN 运行时注入 utility 顺序可能在本文件之后，必须用 !important 锁定 transform。 ── */
+.paper-tilt { transform: rotate(-0.3deg) !important; }
+@media (min-width: 768px) {
+  .paper-tilt-center { transform: translateX(-50%) rotate(-0.3deg) !important; }
+}
+
 /* ── Mobile ────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .card-wrapper {
@@ -641,6 +648,11 @@ body {
               transform var(--dur-stage) var(--ease-entrance);
 }
 
+/* 三牌阵需要更宽容器（260×3 + gap×2 = 828px > 720px content-max） */
+.stage.stage--wide {
+  max-width: var(--content-wide);
+}
+
 .stage.is-visible {
   opacity: 1;
   transform: translateY(0);
@@ -754,6 +766,12 @@ body {
   color: var(--ink);
   transform: rotate(0deg) translateY(-1px);
 }
+.paper-chip.is-active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  transform: rotate(0deg);
+}
 
 /* 门 SVG 按钮 */
 .door-btn {
@@ -793,6 +811,133 @@ body {
 .door-btn.auto {
   width: auto;
 }
+
+/* ── Secondary button: ghost / 次按钮 ─────────────────── */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 200ms var(--ease-quiet);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ── Compact primary button (用于 modal/header 内的紧凑场景) ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 1px solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 220ms var(--ease-quiet);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--ease-quiet);
+  z-index: 0;
+}
+.btn-primary:hover::before { transform: scaleX(1); }
+.btn-primary:hover, .btn-primary:hover * { color: var(--bg) !important; }
+.btn-primary > * { position: relative; z-index: 1; }
+
+/* ── Hero typography (P1-4 行高过松) ──────────────────── */
+.h-hero {
+  font-size: var(--font-hero);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+}
+.h-title {
+  font-size: var(--font-title);
+  line-height: var(--lh-tight);
+}
+
+/* ── Tarot motif（P1-2 视觉钩子）───────────────────────
+   不引入彩色——保留"我是白"的硬约束。
+   钩子改成两个克制的图形：
+   ① compass-bg：罗盘 SVG 背景，opacity 0.04
+   ② stage-number 加一个细小的星标点
+*/
+.compass-bg {
+  position: relative;
+}
+.compass-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-repeat: no-repeat;
+  background-position: center 18%;
+  background-size: 280px 280px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%230a0a0a' stroke-width='1'><circle cx='100' cy='100' r='90'/><circle cx='100' cy='100' r='70'/><circle cx='100' cy='100' r='6'/><line x1='100' y1='10' x2='100' y2='30'/><line x1='100' y1='170' x2='100' y2='190'/><line x1='10' y1='100' x2='30' y2='100'/><line x1='170' y1='100' x2='190' y2='100'/><line x1='35' y1='35' x2='49' y2='49'/><line x1='151' y1='151' x2='165' y2='165'/><line x1='165' y1='35' x2='151' y2='49'/><line x1='35' y1='165' x2='49' y2='151'/><polygon points='100,40 106,100 100,160 94,100'/><polygon points='40,100 100,94 160,100 100,106'/></svg>");
+}
+@media (max-width: 768px) {
+  .compass-bg::before { background-size: 200px 200px; }
+}
+
+.stage-number::after {
+  content: '✦';
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.7em;
+  opacity: 0.35;
+  vertical-align: middle;
+}
+
+/* ── Toast（替代 alert） ───────────────────────────────── */
+.toast-host {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  padding: 10px 18px;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  transform: translateY(-8px) rotate(-0.3deg);
+  transition: opacity 220ms var(--ease-quiet), transform 220ms var(--ease-quiet);
+  max-width: 480px;
+}
+.toast.toast-show {
+  opacity: 1;
+  transform: translateY(0) rotate(-0.3deg);
+}
+.toast-warn  { border-color: #b08900; }
+.toast-error { border-color: #b32d2d; }
+.toast-success { border-color: var(--ink); }
 
 /* 手绘下划线 — 像随手画的 */
 .hand-underline {

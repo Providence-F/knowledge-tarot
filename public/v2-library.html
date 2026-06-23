@@ -5,26 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的牌库 — 知识塔罗</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            tarot: {
-              bg: '#ffffff', card: '#ffffff', gold: '#000000',
-              ivory: '#1a1a1a', muted: '#888888',
-              border: '#e5e5e5', accent: '#f5f5f5'
-            }
-          },
-          fontFamily: {
-            serif: ['Georgia', 'Noto Serif SC', 'serif'],
-            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
+  <script src="js/tailwind-config.js?v=20260623p1"></script>
+  <link rel="stylesheet" href="css/style.css?v=20260623p1">
 </head>
 <body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
 
@@ -47,11 +29,11 @@
 
   <main class="max-w-5xl mx-auto px-4 py-10">
 
-    <!-- Tabs -->
+    <!-- Tabs（按访问频次：抽牌历史 → 当前牌堆 → 牌堆管理 → 对话历史 → 身份） -->
     <div class="flex items-center gap-1 mb-8 border-b border-tarot-border overflow-x-auto">
-      <button class="lib-tab active" data-tab="decks">牌堆管理 <span class="badge" id="badgeDecks"></span></button>
+      <button class="lib-tab active" data-tab="history">抽牌历史 <span class="badge" id="badgeHistory"></span></button>
       <button class="lib-tab" data-tab="deck">当前牌堆 <span class="badge" id="badgeDeck"></span></button>
-      <button class="lib-tab" data-tab="history">抽牌历史 <span class="badge" id="badgeHistory"></span></button>
+      <button class="lib-tab" data-tab="decks">牌堆管理 <span class="badge" id="badgeDecks"></span></button>
       <button class="lib-tab" data-tab="dialogues">对话历史 <span class="badge" id="badgeDialogues"></span></button>
       <button class="lib-tab" data-tab="account">身份</button>
     </div>
@@ -63,7 +45,7 @@
           <h2 class="font-serif text-2xl font-bold text-black mb-1">牌堆管理</h2>
           <p class="text-sm text-tarot-muted">管理你克隆、导入和创建的牌堆。系统和示范牌堆只能使用或克隆，不能删除。</p>
         </div>
-        <a href="v2-import.html" class="inline-flex items-center justify-center px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition">+ 新建 / 导入牌堆</a>
+        <a href="v2-import.html" class="btn-primary text-sm"><span>+ 新建 / 导入牌堆</span></a>
       </div>
       <div id="decksManager" class="space-y-6">
         <div class="p-6 text-center text-tarot-muted text-sm border border-tarot-border rounded-xl">加载中...</div>
@@ -134,7 +116,7 @@
           <p class="text-sm text-tarot-muted mb-3">这串字符是你独立牌库的"钥匙"。换设备 / 清浏览器后，把它粘贴回来即可恢复整副牌堆和历史。</p>
           <div class="flex gap-2">
             <input id="myUserId" type="text" readonly class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm bg-tarot-accent font-mono">
-            <button id="copyIdBtn" class="px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition">复制</button>
+            <button id="copyIdBtn" class="btn-ghost text-sm">复制</button>
           </div>
           <p class="text-xs text-tarot-muted mt-2">⚠ 任何拿到这串字符的人都可以读你的牌堆，不要发到公开场合。</p>
         </div>
@@ -144,7 +126,7 @@
           <p class="text-sm text-tarot-muted mb-3">把另一个身份码粘进来，本浏览器就会切换到那个牌库（cookie 保留 1 年）。</p>
           <div class="flex gap-2">
             <input id="restoreInput" type="text" placeholder="32 位身份码" class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm font-mono focus:outline-none focus:border-black/40">
-            <button id="restoreBtn" class="px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition">切换</button>
+            <button id="restoreBtn" class="btn-primary text-sm"><span>切换</span></button>
           </div>
           <div id="accountStatus" class="hidden mt-3 p-3 rounded-lg text-sm border"></div>
         </div>
@@ -442,7 +424,7 @@
           <p class="text-sm text-tarot-muted mb-4">把这个链接发给朋友，他打开后可以把这副牌堆克隆到自己的牌库（独立副本，互不影响）。链接 30 天内有效。</p>
           <div class="flex gap-2 mb-2">
             <input id="libShareUrl" type="text" readonly class="flex-1 px-3 py-2 border border-tarot-border rounded-lg text-sm bg-tarot-accent font-mono">
-            <button id="libShareCopy" class="px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-tarot-ivory transition whitespace-nowrap">复制</button>
+            <button id="libShareCopy" class="btn-ghost text-sm whitespace-nowrap">复制</button>
           </div>
           <div id="libShareHint" class="hidden text-xs text-green-700">已复制到剪贴板 ✓</div>
         </div>
@@ -450,6 +432,6 @@
     </div>
   </div>
 
-  <script src="js/v2-library.js?v=20260618a"></script>
+  <script src="js/v2-library.js?v=20260623p1"></script>
 </body>
 </html>

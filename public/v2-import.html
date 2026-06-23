@@ -5,26 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>导入内容 — 知识塔罗</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            tarot: {
-              bg: '#ffffff', card: '#ffffff', gold: '#000000',
-              ivory: '#1a1a1a', muted: '#888888',
-              border: '#e5e5e5', accent: '#f5f5f5'
-            }
-          },
-          fontFamily: {
-            serif: ['Georgia', 'Noto Serif SC', 'serif'],
-            sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif']
-          }
-        }
-      }
-    }
-  </script>
+  <script src="js/tailwind-config.js?v=20260623p1"></script>
+  <link rel="stylesheet" href="css/style.css?v=20260623p1">
 </head>
 <body class="bg-tarot-bg text-tarot-ivory min-h-screen font-sans">
 
@@ -157,6 +139,6 @@
     document.getElementById('privacyClose').addEventListener('click', () => document.getElementById('privacyModal').classList.add('hidden'));
   </script>
 
-  <script src="js/v2-import.js?v=20260618a"></script>
+  <script src="js/v2-import.js?v=20260623p1"></script>
 </body>
 </html>
