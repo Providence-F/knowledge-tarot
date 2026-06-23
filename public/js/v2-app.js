@@ -629,6 +629,16 @@
   }
   function closeReactionWidget() {
     collapseReactionWidget();
+    $('reactionWidget')?.classList.add('hidden');
+    $('reactionWidgetPanel')?.classList.remove('is-main');
+  }
+  function expandReactionToMain() {
+    const panel = $('reactionWidgetPanel');
+    if (!panel) return;
+    panel.classList.remove('hidden');
+    panel.classList.add('is-main');
+    $('reactionWidgetBtn')?.classList.add('hidden');
+    setTimeout(() => $('reactionInput')?.focus({ preventScroll: true }), 60);
   }
   function scrollIntoViewIfNeeded(el) {
     if (!el) return;
@@ -655,11 +665,14 @@
   function renderCards(cards) {
     const list = $('cardsContainer');
     list.innerHTML = '';
-    // 竖排单列（v3.0 沉浸式叙事）
-    list.className = 'flex flex-col items-center gap-10 mx-auto mb-10';
+    const isThree = cards.length === 3;
+    // 三牌阵横向排列，单牌保持竖排居中
+    list.className = isThree
+      ? 'spread-three flex flex-row flex-wrap items-start justify-center gap-6 mx-auto mb-10'
+      : 'flex flex-col items-center gap-10 mx-auto mb-10';
     cards.forEach((card, idx) => {
       const slot = document.createElement('div');
-      slot.className = 'flex flex-col items-center';
+      slot.className = isThree ? 'flex flex-col items-center spread-three-slot' : 'flex flex-col items-center';
       if (card.positionName) {
         const label = document.createElement('div');
         label.className = 'position-outer-label';
@@ -920,6 +933,7 @@
     const cards = state.currentCards || [];
     if (cards.length === 0) return;
 
+    expandReactionToMain();
     const askBtn = $('askDeeperBtn');
     askBtn.disabled = true;
     askBtn.classList.add('opacity-60');
@@ -987,8 +1001,7 @@
         })
       }).catch(() => {});
     }
-    $('aiBridge').classList.remove('hidden');
-    $('aiBridge').innerHTML = `<p class="text-tarot-muted italic text-sm">把这个反应也带走。下一次它会以新的牌回来找你。</p>`;
+    closeReactionWidget();
   }
 
   // ── 深度对话（全局，针对当前抽出的所有牌） ──────────

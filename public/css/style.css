@@ -90,6 +90,12 @@ body {
   height: 400px;
 }
 
+/* 三牌阵横向布局 */
+.spread-three { flex-wrap: wrap; }
+.spread-three .card-wrapper { width: 260px; height: 372px; }
+.spread-three .card-front { padding: 1.25rem; }
+.spread-three .card-front h3 { font-size: 1.25rem; margin-top: 18px; }
+
 .card-inner {
   position: relative;
   width: 100%;
@@ -573,6 +579,46 @@ body {
   }
 }
 
+/* 反应浮窗占据主页态 */
+.reaction-widget-panel.is-main {
+  position: fixed;
+  inset: 5vh 5vw;
+  width: auto;
+  max-height: none;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+}
+.reaction-widget-panel.is-main .reaction-widget-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+.reaction-widget-panel.is-main .paper-textarea {
+  max-width: 680px;
+  width: 100%;
+  min-height: 160px;
+  font-size: 1.05rem;
+}
+.reaction-widget-panel.is-main .reaction-widget-header {
+  padding: 18px 24px;
+}
+@media (max-width: 768px) {
+  .reaction-widget-panel.is-main {
+    inset: 3vh 3vw;
+    border-radius: 16px;
+  }
+  .reaction-widget-panel.is-main .reaction-widget-body {
+    padding: 20px;
+  }
+  .reaction-widget-panel.is-main .paper-textarea {
+    min-height: 120px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reaction-widget-button { transition: none; }
   .reaction-widget-button:hover { transform: none; }
@@ -736,8 +782,9 @@ body {
 .door-btn:hover::before {
   transform: scaleX(1);
 }
-.door-btn:hover {
-  color: var(--bg);
+.door-btn:hover,
+.door-btn:hover * {
+  color: var(--bg) !important;
 }
 .door-btn span {
   position: relative;
@@ -808,4 +855,27 @@ body {
   }
   .card-front { padding: 1rem; }
   .card-front h3 { font-size: 1.05rem; line-height: 1.35; margin-bottom: 0.5rem; }
+  .spread-three { gap: 0.5rem !important; }
+  .spread-three .card-wrapper {
+    width: 106px;
+    height: 152px;
+  }
+  .spread-three .card-front { padding: 0.5rem; }
+  .spread-three .card-front h3 {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    margin: 6px 0 4px;
+    padding-top: 4px;
+  }
+  .spread-three .suit-object { width: 22px; height: 22px; }
+  .spread-three .suit-object svg { width: 100%; height: 100%; }
+  .spread-three .card-front::after { width: 12px; height: 12px; }
+  .spread-three .card-back-pattern { width: 28px; height: 28px; }
+  .spread-three .position-outer-label {
+    font-size: 0.5rem;
+    padding: 2px 6px;
+    margin-bottom: 4px;
+  }
+  .spread-three .card-front .mt-3.pt-2,
+  .spread-three .card-front .flex-1.overflow-hidden { display: none; }
 }
