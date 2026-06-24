@@ -874,27 +874,8 @@ body {
 
 /* ── Tarot motif（P1-2 视觉钩子）───────────────────────
    不引入彩色——保留"我是白"的硬约束。
-   钩子改成两个克制的图形：
-   ① compass-bg：罗盘 SVG 背景，opacity 0.04
-   ② stage-number 加一个细小的星标点
+   stage-number 后面的小 ✦ 星见 .stage-number::after。
 */
-.compass-bg {
-  position: relative;
-}
-.compass-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.04;
-  background-repeat: no-repeat;
-  background-position: center 18%;
-  background-size: 280px 280px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%230a0a0a' stroke-width='1'><circle cx='100' cy='100' r='90'/><circle cx='100' cy='100' r='70'/><circle cx='100' cy='100' r='6'/><line x1='100' y1='10' x2='100' y2='30'/><line x1='100' y1='170' x2='100' y2='190'/><line x1='10' y1='100' x2='30' y2='100'/><line x1='170' y1='100' x2='190' y2='100'/><line x1='35' y1='35' x2='49' y2='49'/><line x1='151' y1='151' x2='165' y2='165'/><line x1='165' y1='35' x2='151' y2='49'/><line x1='35' y1='165' x2='49' y2='151'/><polygon points='100,40 106,100 100,160 94,100'/><polygon points='40,100 100,94 160,100 100,106'/></svg>");
-}
-@media (max-width: 768px) {
-  .compass-bg::before { background-size: 200px 200px; }
-}
 
 .stage-number::after {
   content: '✦';

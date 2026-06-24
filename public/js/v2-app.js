@@ -551,6 +551,7 @@
     $('drawStatus').classList.remove('hidden');
     $('drawStatus').innerHTML = '<div class="flex items-center justify-center gap-3"><div class="w-4 h-4 border-2 rounded-full animate-spin" style="border-color:#e5e5e5;border-top-color:var(--ink)"></div><span>正在从你过去的笔记里抽出一段…</span></div>';
     $('cardsContainer').innerHTML = '';
+    renderSpreadNarrative('', null);
     closeReactionWidget();
     $('reactionWidget')?.classList.add('hidden');
     if ($('aiBridge')) $('aiBridge').innerHTML = '';
