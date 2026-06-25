@@ -38,6 +38,30 @@ const SEED_DEFS = [
   }
 ];
 
+const EXTRA_SEED_DEFS = [
+  {
+    slug: 'kai-vault-250',
+    name: 'AI革命生存指南精选',
+    description: '从 Kai 的 Obsidian 知识库中严格筛选出的 250 张判断卡。',
+    emoji: '🧭',
+    order: 3
+  },
+  {
+    slug: 'pmthinking-links',
+    name: '产品沉思录索引',
+    description: '产品沉思录公开文章的标题与原文链接索引；不复制正文，点击回原站查看。',
+    emoji: '📝',
+    order: 4
+  },
+  {
+    slug: 'deepseek-curated-250',
+    name: 'DeepSeek 对话精选 250',
+    description: '从 720 张历史对话卡中严格筛选并重写出的 250 张判断卡。',
+    emoji: '🧠',
+    order: 5
+  }
+];
+
 const SUITS = [
   ['seed-of-growth', '成长之种'],
   ['mirror-of-world', '世界之镜'],
@@ -244,8 +268,12 @@ async function main() {
 
   if (DRY_RUN) return;
 
-  const registry = SEED_DEFS.map(def => {
+  const registry = [...SEED_DEFS, ...EXTRA_SEED_DEFS].map(def => {
     const file = path.join(OUT_DIR, `${def.slug}.json`);
+    if (!fs.existsSync(file)) {
+      console.warn(`  ! 缺少外部 seed deck 文件，跳过 registry: ${def.slug}`);
+      return null;
+    }
     const deck = JSON.parse(fs.readFileSync(file, 'utf-8'));
     return {
       id: `seed-${def.slug}`,
@@ -256,7 +284,7 @@ async function main() {
       totalCards: deck.cards?.length || 0,
       order: def.order
     };
-  }).sort((a, b) => (a.order || 99) - (b.order || 99));
+  }).filter(Boolean).sort((a, b) => (a.order || 99) - (b.order || 99));
 
   fs.writeFileSync(path.join(OUT_DIR, 'registry.json'), JSON.stringify(registry, null, 2));
   console.log(`\n✓ 写入 registry.json (${registry.length} decks)`);

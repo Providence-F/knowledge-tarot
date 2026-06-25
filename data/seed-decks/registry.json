@@ -16,5 +16,32 @@
     "emoji": "🏛️",
     "totalCards": 100,
     "order": 2
+  },
+  {
+    "id": "seed-kai-vault-250",
+    "slug": "kai-vault-250",
+    "name": "AI革命生存指南精选",
+    "description": "从 Kai 的 Obsidian 知识库中严格筛选出的 250 张判断卡。",
+    "emoji": "🧭",
+    "totalCards": 250,
+    "order": 3
+  },
+  {
+    "id": "seed-pmthinking-links",
+    "slug": "pmthinking-links",
+    "name": "产品沉思录索引",
+    "description": "产品沉思录公开文章的标题与原文链接索引；不复制正文，点击回原站查看。",
+    "emoji": "📝",
+    "totalCards": 466,
+    "order": 4
+  },
+  {
+    "id": "seed-deepseek-curated-250",
+    "slug": "deepseek-curated-250",
+    "name": "DeepSeek 对话精选 250",
+    "description": "从 720 张历史对话卡中严格筛选并重写出的 250 张判断卡。",
+    "emoji": "🧠",
+    "totalCards": 250,
+    "order": 5
   }
 ]
