@@ -410,13 +410,9 @@ router.post('/import/files', upload.array('files', 50), async (req, res) => {
         }
       }
       if (/\.(md|txt)$/i.test(f.originalname)) {
-        items.push({
-          id: 'upload-' + f.originalname + '-' + Date.now(),
-          body: text,
-          title: path.basename(f.originalname, path.extname(f.originalname)),
-          createdAt: Date.now(),
-          sourceMeta: { type: 'textdump', path: f.originalname }
-        });
+        const filename = path.basename(f.originalname, path.extname(f.originalname));
+        items.push(...textdump.loadFromText(text, filename));
+        continue;
       }
     }
     if (items.length === 0) return res.status(400).json({ error: 'No valid .md/.txt/conversations.json files' });
